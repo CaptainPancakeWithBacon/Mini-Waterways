@@ -46,7 +46,7 @@ Players build and manage boat routes in real time by drawing paths across a top-
 Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/mini-waterways.git
+git clone https://github.com/CaptainPancakeWithBacon/mini-waterways.git
 cd mini-waterways
 ```
 
