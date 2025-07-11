@@ -13,12 +13,13 @@ Design and manage efficient water routes across islands, ports, and cities using
 Players build and manage boat routes in real time by drawing paths across a top-down water map. Boats travel along these routes to connect various hubs — like towns, industrial ports, and clean water stations.
 
 ### Current Features
-- 🖱️ **Click & drag route creation** for boat paths  
-- 🚤 **Basic AI boat movement**  
-- 💧 Clean, minimalist art style  
-- 🎯 Interactive canvas built with TypeScript  
+- None :)
 
 ### Coming Soon
+- 🖱️ Click & drag route creation for boat paths  
+- 🚤 Basic AI boat movement  
+- 💧 Clean, minimalist art style  
+- 🎯 Interactive canvas built with TypeScript  
 - ⛴️ Multiple boat types (ferries, cargo, etc.)  
 - 🌧️ Weather & tide mechanics  
 - ⚡ Integration with energy generation (hydro/tidal)  
