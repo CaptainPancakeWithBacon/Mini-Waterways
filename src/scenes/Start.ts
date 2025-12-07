@@ -9,6 +9,11 @@ import Grid from '../Grid.js';
 import RouteNetwork from '../RouteNetwork.js';
 import TransitLine from '../TransitLine.js';
 
+/**
+ * Main gameplay scene for Mini Waterways
+ * Manages the game state, transit lines, ports, boats, and user interactions
+ * Handles tile placement, line creation, passenger transport, and game progression
+ */
 export default class Start extends Scene {
   private grid: Grid;
   private routeNetwork: RouteNetwork;
@@ -43,6 +48,10 @@ export default class Start extends Scene {
   private nextPortInterval: number = 30000;
   private lastRewardDay: number = 0;
 
+  /**
+   * Creates a new Start scene instance
+   * Initializes the grid, route network, and starting ports
+   */
   public constructor() {
     super();
     this.grid = new Grid(window.innerWidth, window.innerHeight, 50);
@@ -50,6 +59,10 @@ export default class Start extends Scene {
     this.initializePorts();
   }
 
+  /**
+   * Initializes the starting ports for the game
+   * Creates 3 ports of different types with accessible tiles
+   */
   private initializePorts(): void {
     // Start with 3 ports on the grid
     const portTypes = [PortType.RESIDENTIAL, PortType.INDUSTRIAL, PortType.COMMERCIAL];

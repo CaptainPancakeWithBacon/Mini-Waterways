@@ -1,11 +1,20 @@
 import Port, { Passenger } from './Port.js';
 import RouteNetwork from './RouteNetwork.js';
 
+/**
+ * Represents a 2D point or position
+ */
 export interface Point {
+  /** X coordinate */
   x: number;
+  /** Y coordinate */
   y: number;
 }
 
+/**
+ * Represents a boat that travels between ports on a transit line
+ * Handles passenger transport, pathfinding, and movement
+ */
 export class Boat {
   position: Point;
   speed = 3;
@@ -27,6 +36,13 @@ export class Boat {
   // Transit line support
   private transitLine: any = null; // Will be TransitLine but avoiding circular dependency
 
+  /**
+   * Creates a new Boat instance
+   * @param startPort The port where the boat starts
+   * @param endPort The destination port
+   * @param routeNetwork The route network to navigate
+   * @param color Visual color of the boat (default: blue)
+   */
   constructor(
     startPort: Port,
     endPort: Port,
@@ -43,6 +59,10 @@ export class Boat {
     this.updatePath();
   }
 
+  /**
+   * Updates the boat's path to the current destination
+   * Finds a path through the route network
+   */
   private updatePath(): void {
     const startPos = this.startPort.getPosition();
     const endPos = this.endPort.getPosition();
@@ -64,6 +84,11 @@ export class Boat {
     }
   }
 
+  /**
+   * Loads passengers onto the boat
+   * @param passengers Array of passengers to load
+   * @returns Number of passengers actually loaded (limited by capacity)
+   */
   public loadPassengers(passengers: Passenger[]): number {
     const availableSpace = this.maxCapacity - this.passengers.length;
     const toLoad = Math.min(passengers.length, availableSpace);
@@ -71,32 +96,60 @@ export class Boat {
     return toLoad;
   }
 
+  /**
+   * Unloads all passengers from the boat
+   * @returns Array of all passengers that were on the boat
+   */
   public unloadPassengers(): Passenger[] {
     const unloaded = [...this.passengers];
     this.passengers = [];
     return unloaded;
   }
 
+  /**
+   * Gets the current number of passengers on the boat
+   * @returns Number of passengers
+   */
   public getPassengers(): number {
     return this.passengers.length;
   }
 
+  /**
+   * Gets the list of passengers on the boat
+   * @returns Array of passengers
+   */
   public getPassengersList(): Passenger[] {
     return this.passengers;
   }
 
+  /**
+   * Checks if the boat has reached its destination
+   * @returns True if the boat is at the destination
+   */
   public isAtDestination(): boolean {
     return this.pathIndex >= this.path.length;
   }
 
+  /**
+   * Gets the current destination port
+   * @returns The port the boat is heading to
+   */
   public getCurrentDestinationPort(): Port {
     return this.endPort;
   }
 
+  /**
+   * Sets the transit line this boat belongs to
+   * @param line The transit line
+   */
   public setTransitLine(line: any): void {
     this.transitLine = line;
   }
 
+  /**
+   * Changes the boat's destination to the next port in the transit line
+   * Automatically finds a new path
+   */
   public swapDestination(): void {
     // If on a transit line, get next port from the line
     if (this.transitLine && this.transitLine.getNextPort) {
@@ -118,14 +171,25 @@ export class Boat {
     this.updatePath();
   }
 
+  /**
+   * Checks if the boat needs a path update
+   * @returns True if a new path is needed
+   */
   public needsPathUpdate(): boolean {
     return this.needsNewPath;
   }
 
+  /**
+   * Forces the boat to recalculate its path
+   */
   public forcePathUpdate(): void {
     this.updatePath();
   }
 
+  /**
+   * Updates the boat's position and movement
+   * Moves the boat along its path towards the destination
+   */
   update() {
     // If we need a new path, try to get one
     if (this.needsNewPath) {
@@ -155,6 +219,11 @@ export class Boat {
     }
   }
 
+  /**
+   * Draws the boat on the canvas
+   * Renders the boat shape, passenger indicators, and wake effect
+   * @param ctx The 2D rendering context to draw with
+   */
   draw(ctx: CanvasRenderingContext2D) {
     ctx.save();
     ctx.translate(this.position.x, this.position.y);

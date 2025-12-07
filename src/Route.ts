@@ -3,6 +3,9 @@ import { Boat } from './Boat.js';
 import CanvasUtil from './utilities/CanvasUtil.js';
 import Port from './Port.js';
 
+/**
+ * Color palette for routes
+ */
 const ROUTE_COLORS = [
   '#e74c3c', // Red
   '#3498db', // Blue
@@ -16,6 +19,10 @@ const ROUTE_COLORS = [
 
 let nextColorIndex = 0;
 
+/**
+ * Represents a transit route connecting two ports
+ * Routes consist of waypoints and can have boats traveling along them
+ */
 export default class Route {
   private points: Point[] = [];
   private startPort: Port | null = null;
@@ -24,6 +31,10 @@ export default class Route {
   private lineWidth: number = 8;
   private boats: Boat[] = [];
 
+  /**
+   * Creates a new Route instance
+   * @param startPort Optional starting port for the route
+   */
   constructor(startPort?: Port) {
     if (startPort) {
       this.startPort = startPort;
@@ -34,10 +45,19 @@ export default class Route {
     nextColorIndex++;
   }
 
+  /**
+   * Adds a waypoint to the route
+   * @param point The point to add to the route
+   */
   public addPoint(point: Point): void {
     this.points.push(point);
   }
 
+  /**
+   * Sets the end port for the route
+   * Updates the last point to match the port's position
+   * @param port The port to set as the destination
+   */
   public setEndPort(port: Port): void {
     this.endPort = port;
     if (this.points.length > 0) {
@@ -45,34 +65,66 @@ export default class Route {
     }
   }
 
+  /**
+   * Gets all waypoints in the route
+   * @returns A copy of the route's points array
+   */
   public getPoints(): Point[] {
     return [...this.points];
   }
 
+  /**
+   * Checks if the route has both a start and end port
+   * @returns True if the route is complete
+   */
   public isComplete(): boolean {
     return this.startPort !== null && this.endPort !== null;
   }
 
+  /**
+   * Gets the starting port of the route
+   * @returns The start port or null if not set
+   */
   public getStartPort(): Port | null {
     return this.startPort;
   }
 
+  /**
+   * Gets the ending port of the route
+   * @returns The end port or null if not set
+   */
   public getEndPort(): Port | null {
     return this.endPort;
   }
 
+  /**
+   * Gets the color assigned to this route
+   * @returns The route's color as a hex string
+   */
   public getColor(): string {
     return this.color;
   }
 
+  /**
+   * Adds a boat to this route
+   * @param boat The boat to add
+   */
   public addBoat(boat: Boat): void {
     this.boats.push(boat);
   }
 
+  /**
+   * Gets all boats currently on this route
+   * @returns Array of boats on the route
+   */
   public getBoats(): Boat[] {
     return this.boats;
   }
 
+  /**
+   * Removes a boat from this route
+   * @param boat The boat to remove
+   */
   public removeBoat(boat: Boat): void {
     const index = this.boats.indexOf(boat);
     if (index > -1) {
@@ -80,6 +132,10 @@ export default class Route {
     }
   }
 
+  /**
+   * Simplifies the route path by removing redundant waypoints
+   * Removes points that don't significantly change the direction
+   */
   public simplifyPath(): void {
     if (this.points.length <= 2) return;
 
@@ -106,6 +162,11 @@ export default class Route {
     this.points = simplified;
   }
 
+  /**
+   * Draws the route on the canvas
+   * Renders the route path, center line, and direction arrows
+   * @param canvas The canvas to draw on
+   */
   public draw(canvas: HTMLCanvasElement): void {
     if (this.points.length < 2) return;
 
@@ -160,6 +221,11 @@ export default class Route {
     }
   }
 
+  /**
+   * Draws bidirectional arrows along the route
+   * Shows arrows in both directions to indicate two-way travel
+   * @param ctx The 2D rendering context to draw with
+   */
   private drawDirectionArrows(ctx: CanvasRenderingContext2D): void {
     // Draw arrows along the route to show bidirectional travel
     for (let i = 0; i < this.points.length - 1; i++) {

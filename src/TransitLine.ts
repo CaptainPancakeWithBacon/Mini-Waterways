@@ -3,6 +3,10 @@ import { Boat } from './Boat.js';
 import RouteNetwork from './RouteNetwork.js';
 import CanvasUtil from './utilities/CanvasUtil.js';
 
+/**
+ * Represents a transit line that connects multiple ports in a loop
+ * Manages boats traveling along the line and handles routing
+ */
 export default class TransitLine {
   private id: string;
   private name: string;
@@ -30,6 +34,12 @@ export default class TransitLine {
 
   private static colorIndex = 0;
 
+  /**
+   * Creates a new TransitLine instance
+   * Automatically assigns a color from the palette
+   * @param routeNetwork The route network for pathfinding
+   * @param name Optional name for the line
+   */
   constructor(routeNetwork: RouteNetwork, name?: string) {
     this.id = `line-${Date.now()}-${Math.random()}`;
     this.routeNetwork = routeNetwork;
@@ -38,6 +48,11 @@ export default class TransitLine {
     TransitLine.colorIndex++;
   }
 
+  /**
+   * Adds a port to the transit line
+   * Won't add the same port twice in a row
+   * @param port The port to add
+   */
   public addPort(port: Port): void {
     // Don't add the same port twice in a row
     if (this.ports.length > 0 && this.ports[this.ports.length - 1] === port) {
@@ -46,30 +61,59 @@ export default class TransitLine {
     this.ports.push(port);
   }
 
+  /**
+   * Removes the last port from the transit line
+   * @returns The removed port, or undefined if no ports
+   */
   public removeLastPort(): Port | undefined {
     return this.ports.pop();
   }
 
+  /**
+   * Gets all ports on this transit line
+   * @returns Copy of the ports array
+   */
   public getPorts(): Port[] {
     return [...this.ports];
   }
 
+  /**
+   * Gets the number of ports on this line
+   * @returns Port count
+   */
   public getPortCount(): number {
     return this.ports.length;
   }
 
+  /**
+   * Gets the unique identifier for this line
+   * @returns The line's ID
+   */
   public getId(): string {
     return this.id;
   }
 
+  /**
+   * Gets the display name of the line
+   * @returns The line's name
+   */
   public getName(): string {
     return this.name;
   }
 
+  /**
+   * Gets the color assigned to this line
+   * @returns The line's color as a hex string
+   */
   public getColor(): string {
     return this.color;
   }
 
+  /**
+   * Checks if the transit line is valid
+   * A line is valid if it has at least 2 ports and all consecutive ports are connected
+   * @returns True if the line is valid
+   */
   public isValid(): boolean {
     // A line needs at least 2 ports to be valid
     if (this.ports.length < 2) return false;
@@ -94,6 +138,10 @@ export default class TransitLine {
     return true;
   }
 
+  /**
+   * Spawns a new boat on this transit line
+   * Won't spawn if at capacity or line has fewer than 2 ports
+   */
   public spawnBoat(): void {
     if (this.boats.length >= this.maxBoats) return;
     if (this.ports.length < 2) return;
@@ -112,23 +160,44 @@ export default class TransitLine {
     this.boats.push(boat);
   }
 
+  /**
+   * Gets all boats currently on this line
+   * @returns Array of boats
+   */
   public getBoats(): Boat[] {
     return this.boats;
   }
 
+  /**
+   * Gets the number of boats on this line
+   * @returns Boat count
+   */
   public getBoatCount(): number {
     return this.boats.length;
   }
 
+  /**
+   * Sets the maximum number of boats allowed on this line
+   * @param max Maximum boat count
+   */
   public setMaxBoats(max: number): void {
     this.maxBoats = max;
   }
 
+  /**
+   * Gets the maximum number of boats allowed on this line
+   * @returns Maximum boat count
+   */
   public getMaxBoats(): number {
     return this.maxBoats;
   }
 
-  // Get the next port in the line after the current port
+  /**
+   * Gets the next port in the line after the current port
+   * Loops back to the start when reaching the end
+   * @param currentPort The current port
+   * @returns The next port in the line, or null if port not found
+   */
   public getNextPort(currentPort: Port): Port | null {
     const index = this.ports.indexOf(currentPort);
     if (index === -1) return null;
@@ -137,14 +206,21 @@ export default class TransitLine {
     return this.ports[(index + 1) % this.ports.length];
   }
 
-  // Update all boats on this line
+  /**
+   * Updates all boats on this transit line
+   * @param elapsed Time elapsed since last update in milliseconds
+   */
   public update(elapsed: number): void {
     for (const boat of this.boats) {
       boat.update();
     }
   }
 
-  // Draw the line route on the map
+  /**
+   * Draws the transit line route on the canvas
+   * Shows the path between ports and port stop indicators
+   * @param canvas The canvas to draw on
+   */
   public draw(canvas: HTMLCanvasElement): void {
     if (this.ports.length < 2) return;
 
@@ -211,13 +287,20 @@ export default class TransitLine {
     }
   }
 
-  // Draw boats for this line
+  /**
+   * Draws all boats on this transit line
+   * @param ctx The 2D rendering context to draw with
+   */
   public drawBoats(ctx: CanvasRenderingContext2D): void {
     for (const boat of this.boats) {
       boat.draw(ctx);
     }
   }
 
+  /**
+   * Removes a specific boat from this line
+   * @param boat The boat to remove
+   */
   public removeBoat(boat: Boat): void {
     const index = this.boats.indexOf(boat);
     if (index > -1) {
@@ -225,6 +308,9 @@ export default class TransitLine {
     }
   }
 
+  /**
+   * Removes all boats from this transit line
+   */
   public clearBoats(): void {
     this.boats = [];
   }

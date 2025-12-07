@@ -1,17 +1,32 @@
 import { Point } from './Boat.js';
 import CanvasUtil from './utilities/CanvasUtil.js';
 
+/**
+ * Types of ports in the game
+ */
 export enum PortType {
+  /** Residential port - generates passengers heading to other port types */
   RESIDENTIAL = 'residential',
+  /** Industrial port - generates passengers heading to other port types */
   INDUSTRIAL = 'industrial',
+  /** Commercial port - generates passengers heading to other port types */
   COMMERCIAL = 'commercial',
 }
 
+/**
+ * Represents a passenger waiting at or traveling to a port
+ */
 export interface Passenger {
+  /** The type of port this passenger wants to reach */
   destinationType: PortType;
+  /** Visual color representing the destination type */
   color: string;
 }
 
+/**
+ * Represents a port where passengers spawn and boats can dock
+ * Handles passenger generation, overflow detection, and visual representation
+ */
 export default class Port {
   private position: Point;
   private radius: number = 30;
@@ -32,6 +47,13 @@ export default class Port {
   private pulseAnimation: number = 0;
   private isOverflowing: boolean = false;
 
+  /**
+   * Creates a new Port instance
+   * @param x X coordinate of the port
+   * @param y Y coordinate of the port
+   * @param name Display name of the port
+   * @param type Type of port (default: RESIDENTIAL)
+   */
   constructor(x: number, y: number, name: string, type: PortType = PortType.RESIDENTIAL) {
     this.position = { x, y };
     this.name = name;
@@ -39,6 +61,11 @@ export default class Port {
     this.color = this.getColorForType(type);
   }
 
+  /**
+   * Gets the color associated with a port type
+   * @param type The port type
+   * @returns Hex color string
+   */
   private getColorForType(type: PortType): string {
     switch (type) {
       case PortType.RESIDENTIAL:
@@ -52,24 +79,46 @@ export default class Port {
     }
   }
 
+  /**
+   * Gets the position of the port
+   * @returns A copy of the port's position
+   */
   public getPosition(): Point {
     return { ...this.position };
   }
 
+  /**
+   * Gets the name of the port
+   * @returns The port's name
+   */
   public getName(): string {
     return this.name;
   }
 
+  /**
+   * Gets the type of the port
+   * @returns The port's type
+   */
   public getType(): PortType {
     return this.type;
   }
 
+  /**
+   * Checks if a point is within the port's boundaries
+   * @param point The point to check
+   * @returns True if the point is inside the port
+   */
   public contains(point: Point): boolean {
     const dx = point.x - this.position.x;
     const dy = point.y - this.position.y;
     return Math.sqrt(dx * dx + dy * dy) <= this.radius;
   }
 
+  /**
+   * Generates a new passenger with a random destination
+   * Destination is always a different port type than this one
+   * @returns A new passenger object
+   */
   private generatePassenger(): Passenger {
     // Generate passenger with random destination (different from current port)
     const availableTypes = this.allPortTypes.filter(t => t !== this.type);
@@ -80,12 +129,22 @@ export default class Port {
     };
   }
 
+  /**
+   * Adds a specified number of passengers to the port
+   * @param count Number of passengers to add
+   */
   public addPassengers(count: number): void {
     for (let i = 0; i < count; i++) {
       this.passengers.push(this.generatePassenger());
     }
   }
 
+  /**
+   * Removes passengers from the port
+   * @param count Maximum number of passengers to remove
+   * @param targetType Optional port type to filter passengers by destination
+   * @returns Array of removed passengers
+   */
   public removePassengers(count: number, targetType?: PortType): Passenger[] {
     const removed: Passenger[] = [];
 
@@ -109,18 +168,36 @@ export default class Port {
     return removed;
   }
 
+  /**
+   * Gets the current number of passengers waiting at the port
+   * @returns Number of passengers
+   */
   public getPassengers(): number {
     return this.passengers.length;
   }
 
+  /**
+   * Gets the number of passengers heading to a specific port type
+   * @param destinationType The destination port type to count
+   * @returns Number of passengers heading to that type
+   */
   public getPassengersByDestination(destinationType: PortType): number {
     return this.passengers.filter(p => p.destinationType === destinationType).length;
   }
 
+  /**
+   * Checks if the port is at maximum capacity
+   * @returns True if at capacity
+   */
   public isAtCapacity(): boolean {
     return this.passengers.length >= this.maxCapacity;
   }
 
+  /**
+   * Updates the port state
+   * Handles passenger spawning, animations, and overflow detection
+   * @param elapsed Time elapsed since last update in milliseconds
+   */
   public update(elapsed: number): void {
     // Spawn passengers at intervals
     this.passengerSpawnTimer += elapsed;
@@ -142,14 +219,28 @@ export default class Port {
     }
   }
 
+  /**
+   * Checks if the port has overflowed
+   * Port overflows when at capacity for too long
+   * @returns True if the port has overflowed
+   */
   public hasOverflowed(): boolean {
     return this.overflowTimer >= this.overflowThreshold;
   }
 
+  /**
+   * Gets the progress towards overflow
+   * @returns Value between 0 and 1 indicating overflow progress
+   */
   public getOverflowProgress(): number {
     return Math.min(1, this.overflowTimer / this.overflowThreshold);
   }
 
+  /**
+   * Draws the port on the canvas
+   * Renders the port circle, passengers, and overflow indicators
+   * @param canvas The canvas to draw on
+   */
   public draw(canvas: HTMLCanvasElement): void {
     const fillPercentage = Math.min(1, this.passengers.length / this.maxCapacity);
     const ctx = canvas.getContext('2d');
@@ -285,6 +376,11 @@ export default class Port {
     }
   }
 
+  /**
+   * Draws an icon indicating the port type
+   * Renders different shapes for residential, industrial, and commercial types
+   * @param canvas The canvas to draw on
+   */
   private drawTypeIndicator(canvas: HTMLCanvasElement): void {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;

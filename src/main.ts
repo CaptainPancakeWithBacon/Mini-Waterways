@@ -1,3 +1,7 @@
+/**
+ * Initializes boat animation on window load
+ * Animates an SVG boat element along a path by updating its startOffset
+ */
 window.onload = () => {
   requestAnimationFrame(() => {
     const boatPath = document.getElementById('boat');
