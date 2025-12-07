@@ -1,8 +1,17 @@
+/**
+ * Represents mouse coordinates relative to the canvas
+ */
 export interface MouseCoordinates {
+  /** X coordinate */
   x: number;
+  /** Y coordinate */
   y: number;
 }
 
+/**
+ * Handles mouse input events for the game
+ * Tracks mouse position, button states, and provides utility methods for interaction detection
+ */
 export default class MouseListener {
   public static readonly BUTTON_LEFT = 0;
 
@@ -21,9 +30,10 @@ export default class MouseListener {
   public static mouseUp: boolean = false;
 
   /**
-   *
-   * @param canvas the canvas element to which the relative coordinates should given
-   * @param disableContextMenu true to disable the context (right click) menu. Default: false
+   * Creates a new MouseListener instance
+   * Sets up event listeners for mouse interactions on the canvas
+   * @param canvas The canvas element to track mouse events on
+   * @param disableContextMenu Whether to disable the context (right-click) menu (default: false)
    */
   public constructor(canvas: HTMLCanvasElement, disableContextMenu: boolean = false) {
     canvas.addEventListener('mousemove', (ev: MouseEvent) => {

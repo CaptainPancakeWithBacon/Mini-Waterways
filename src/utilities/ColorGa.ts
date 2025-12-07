@@ -5,6 +5,10 @@ import Scene from '../scenes/Scene.js';
 import MouseListener from './MouseListener.js';
 import Start from '../scenes/Start.js';
 
+/**
+ * Alternative game class implementation
+ * Extends the base Game class with scene management and window resizing
+ */
 export default class ColorGa extends Game {
   public static canvas: HTMLCanvasElement;
 
@@ -14,6 +18,11 @@ export default class ColorGa extends Game {
 
   private currentScene: Scene;
 
+  /**
+   * Creates a new ColorGa game instance
+   * Initializes canvas, input listeners, and scene management
+   * @param canvas The HTML canvas element to render the game on
+   */
   public constructor(canvas: HTMLCanvasElement) {
     super();
     ColorGa.canvas = canvas;
@@ -28,7 +37,8 @@ export default class ColorGa extends Game {
   }
 
   /**
-   * Automatically adjusts scene size/aspect if window is resized
+   * Handles window resize events
+   * Automatically adjusts canvas size to match window dimensions
    */
   public onWindowResize() {
     ColorGa.canvas.width = window.innerWidth;
