@@ -18,7 +18,7 @@ window.onload = () => {
 
       moveBoat();
     } else {
-      console.error("🚤 #boat not found or not SVGTextPathElement");
+      console.error('🚤 #boat not found or not SVGTextPathElement');
     }
   });
 };

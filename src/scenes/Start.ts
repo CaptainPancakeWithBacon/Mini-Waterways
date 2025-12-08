@@ -3,11 +3,11 @@ import KeyListener from '../utilities/KeyListener.js';
 import MouseListener from '../utilities/MouseListener.js';
 import Scene from './Scene.js';
 import Port, { PortType } from '../Port.js';
-import { Boat } from '../Boat.js';
 import { Point } from '../Boat.js';
 import Grid from '../Grid.js';
 import RouteNetwork from '../RouteNetwork.js';
 import TransitLine from '../TransitLine.js';
+import ButtonBar from '../utilities/ButtonBar.js';
 
 /**
  * Main gameplay scene for Mini Waterways
@@ -16,36 +16,54 @@ import TransitLine from '../TransitLine.js';
  */
 export default class Start extends Scene {
   private grid: Grid;
+
   private routeNetwork: RouteNetwork;
+
   private ports: Port[] = [];
+
   private transitLines: TransitLine[] = [];
+
+  private buttonBar: ButtonBar;
 
   // Tile placement mode
   private isPlacingTiles: boolean = false;
+
   private isRemovingTiles: boolean = false;
+
   private lastPlacedTile: Point | null = null;
 
   // Line creation mode
   private isCreatingLine: boolean = false;
+
   private currentLine: TransitLine | null = null;
 
   // Game state
   private score: number = 0;
+
   private gameTime: number = 0;
+
   private isGameOver: boolean = false;
+
   private gameOverMessage: string = '';
 
   // Resources
   private maxTiles: number = 30;
+
   private maxBoatsPerLine: number = 2;
+
   private boatSpawnTimer: number = 0;
+
   private boatSpawnInterval: number = 5000;
 
   // Progression
   private dayDuration: number = 30000;
+
   private currentDay: number = 1;
+
   private nextPortTimer: number = 0;
+
   private nextPortInterval: number = 30000;
+
   private lastRewardDay: number = 0;
 
   /**
@@ -56,6 +74,8 @@ export default class Start extends Scene {
     super();
     this.grid = new Grid(window.innerWidth, window.innerHeight, 50);
     this.routeNetwork = new RouteNetwork(50);
+    this.buttonBar = new ButtonBar();
+    this.buttonBar.createGameButtons(window.innerWidth, window.innerHeight);
     this.initializePorts();
   }
 
@@ -84,11 +104,11 @@ export default class Start extends Scene {
 
     // Add tiles in a cross pattern around the port
     const offsets = [
-      { dx: 0, dy: 0 },   // Center
-      { dx: 1, dy: 0 },   // Right
-      { dx: -1, dy: 0 },  // Left
-      { dx: 0, dy: 1 },   // Down
-      { dx: 0, dy: -1 },  // Up
+      { dx: 0, dy: 0 }, // Center
+      { dx: 1, dy: 0 }, // Right
+      { dx: -1, dy: 0 }, // Left
+      { dx: 0, dy: 1 }, // Down
+      { dx: 0, dy: -1 }, // Up
     ];
 
     for (const offset of offsets) {
@@ -103,7 +123,7 @@ export default class Start extends Scene {
     const portNames = [
       'North Harbor', 'South Port', 'East Dock', 'West Bay',
       'Marina Vista', 'Harbor Point', 'Seaside Terminal', 'Ocean Gate',
-      'Bay View', 'Port Royal', 'Anchor Bay', 'Lighthouse Port'
+      'Bay View', 'Port Royal', 'Anchor Bay', 'Lighthouse Port',
     ];
 
     const pos = this.grid.getRandomGridPosition(100);
@@ -135,9 +155,8 @@ export default class Start extends Scene {
     return null;
   }
 
-
   private checkProgression(): void {
-    const currentDay = this.currentDay;
+    const { currentDay } = this;
 
     // Give rewards every 3 days
     if (currentDay > this.lastRewardDay && currentDay % 3 === 0) {
@@ -160,46 +179,76 @@ export default class Start extends Scene {
     }
   }
 
-  public processInput(keyListener: KeyListener): void {
+  public processInput(_keyListener: KeyListener): void {
     if (this.isGameOver) return;
 
     const mousePos = MouseListener.mouseCoordinates;
     const snappedPos = this.grid.snapToGrid(mousePos);
 
-    // Toggle line creation mode with 'L' key
-    if (KeyListener.keyPressed(KeyListener.KEY_L)) {
-      this.isCreatingLine = !this.isCreatingLine;
+    // Update button states
+    this.buttonBar.update();
 
-      if (this.isCreatingLine) {
-        // Start new line
+    const placeTilesBtn = this.buttonBar.getButton('placeTiles');
+    const removeTilesBtn = this.buttonBar.getButton('removeTiles');
+    const createLineBtn = this.buttonBar.getButton('createLine');
+    const completeLineBtn = this.buttonBar.getButton('completeLine');
+    const cancelLineBtn = this.buttonBar.getButton('cancelLine');
+    const undoPortBtn = this.buttonBar.getButton('undoPort');
+
+    // Update button active states
+    if (placeTilesBtn) placeTilesBtn.setActive(this.isPlacingTiles);
+    if (removeTilesBtn) removeTilesBtn.setActive(this.isRemovingTiles);
+    if (createLineBtn) createLineBtn.setActive(this.isCreatingLine);
+
+    // Handle button clicks
+    if (!this.isCreatingLine) {
+      // Normal mode buttons
+      if (placeTilesBtn?.isClicked()) {
+        this.isPlacingTiles = !this.isPlacingTiles;
+        this.isRemovingTiles = false;
+        this.lastPlacedTile = null;
+      }
+
+      if (removeTilesBtn?.isClicked()) {
+        this.isRemovingTiles = !this.isRemovingTiles;
+        this.isPlacingTiles = false;
+        this.lastPlacedTile = null;
+      }
+
+      if (createLineBtn?.isClicked()) {
+        this.isCreatingLine = true;
         this.currentLine = new TransitLine(this.routeNetwork);
         this.isPlacingTiles = false;
         this.isRemovingTiles = false;
-      } else {
-        // Cancel line creation
+        this.lastPlacedTile = null;
+      }
+    } else {
+      // Line creation mode buttons
+      if (createLineBtn?.isClicked()) {
+        // Toggle off line mode
+        this.isCreatingLine = false;
         this.currentLine = null;
       }
-    }
 
-    // Complete line with Enter key
-    if (this.isCreatingLine && KeyListener.keyPressed(KeyListener.KEY_ENTER)) {
-      if (this.currentLine && this.currentLine.isValid()) {
-        this.transitLines.push(this.currentLine);
-        this.currentLine.setMaxBoats(this.maxBoatsPerLine);
+      if (completeLineBtn?.isClicked()) {
+        if (this.currentLine && this.currentLine.isValid()) {
+          this.transitLines.push(this.currentLine);
+          this.currentLine.setMaxBoats(this.maxBoatsPerLine);
+          this.currentLine = null;
+          this.isCreatingLine = false;
+        }
+      }
+
+      if (cancelLineBtn?.isClicked()) {
         this.currentLine = null;
         this.isCreatingLine = false;
       }
-    }
 
-    // Cancel line with Escape key
-    if (this.isCreatingLine && KeyListener.keyPressed(KeyListener.KEY_ESC)) {
-      this.currentLine = null;
-      this.isCreatingLine = false;
-    }
-
-    // Remove last port from line with Backspace
-    if (this.isCreatingLine && this.currentLine && KeyListener.keyPressed('Backspace')) {
-      this.currentLine.removeLastPort();
+      if (undoPortBtn?.isClicked()) {
+        if (this.currentLine) {
+          this.currentLine.removeLastPort();
+        }
+      }
     }
 
     // Line creation mode - click ports to add to line
@@ -210,34 +259,12 @@ export default class Start extends Scene {
       }
     }
 
-    // Normal mode - place/remove tiles
-    if (!this.isCreatingLine) {
-      // Left click - place tiles
-      if (MouseListener.buttonPressed(MouseListener.BUTTON_LEFT)) {
-        if (!this.getPortAtPosition(mousePos)) {
-          this.isPlacingTiles = true;
-          this.isRemovingTiles = false;
-          this.lastPlacedTile = null;
-        }
-      }
-
-      // Right click - remove tiles
-      if (MouseListener.buttonPressed(MouseListener.BUTTON_RIGHT)) {
-        if (!this.getPortAtPosition(mousePos)) {
-          this.isRemovingTiles = true;
-          this.isPlacingTiles = false;
-          this.lastPlacedTile = null;
-        }
-      }
-    }
-
-    // Place tiles while dragging
+    // Place tiles while in place mode
     if (MouseListener.isButtonDown(MouseListener.BUTTON_LEFT) && this.isPlacingTiles) {
       if (this.routeNetwork.getPlayerTileCount() < this.maxTiles) {
-        if (!this.lastPlacedTile ||
-            this.lastPlacedTile.x !== snappedPos.x ||
-            this.lastPlacedTile.y !== snappedPos.y) {
-
+        if (!this.lastPlacedTile
+            || this.lastPlacedTile.x !== snappedPos.x
+            || this.lastPlacedTile.y !== snappedPos.y) {
           if (!this.getPortAtPosition(snappedPos)) {
             this.routeNetwork.addTile(snappedPos.x, snappedPos.y);
             this.lastPlacedTile = snappedPos;
@@ -255,12 +282,11 @@ export default class Start extends Scene {
       }
     }
 
-    // Remove tiles while dragging
-    if (MouseListener.isButtonDown(MouseListener.BUTTON_RIGHT) && this.isRemovingTiles) {
-      if (!this.lastPlacedTile ||
-          this.lastPlacedTile.x !== snappedPos.x ||
-          this.lastPlacedTile.y !== snappedPos.y) {
-
+    // Remove tiles while in remove mode
+    if (MouseListener.isButtonDown(MouseListener.BUTTON_LEFT) && this.isRemovingTiles) {
+      if (!this.lastPlacedTile
+          || this.lastPlacedTile.x !== snappedPos.x
+          || this.lastPlacedTile.y !== snappedPos.y) {
         if (!this.getPortAtPosition(snappedPos)) {
           const removed = this.routeNetwork.removeTile(snappedPos.x, snappedPos.y);
           if (removed) {
@@ -277,10 +303,8 @@ export default class Start extends Scene {
       }
     }
 
-    // Stop placing/removing tiles
+    // Stop placing/removing tiles on mouse up
     if (MouseListener.mouseUp) {
-      this.isPlacingTiles = false;
-      this.isRemovingTiles = false;
       this.lastPlacedTile = null;
     }
   }
@@ -325,8 +349,8 @@ export default class Start extends Scene {
           // Unload passengers that match this port's type
           if (boat.getPassengers() > 0) {
             const allPassengers = boat.unloadPassengers();
-            const matchingPassengers = allPassengers.filter(p => p.destinationType === destinationType);
-            const nonMatchingPassengers = allPassengers.filter(p => p.destinationType !== destinationType);
+            const matchingPassengers = allPassengers.filter((p) => p.destinationType === destinationType);
+            const nonMatchingPassengers = allPassengers.filter((p) => p.destinationType !== destinationType);
 
             // Score for successfully delivered passengers
             this.score += matchingPassengers.length;
@@ -415,8 +439,8 @@ export default class Start extends Scene {
       const mousePos = MouseListener.mouseCoordinates;
       const snappedPos = this.grid.snapToGrid(mousePos);
 
-      if (!this.getPortAtPosition(snappedPos) &&
-          this.routeNetwork.getPlayerTileCount() < this.maxTiles) {
+      if (!this.getPortAtPosition(snappedPos)
+          && this.routeNetwork.getPlayerTileCount() < this.maxTiles) {
         const gridSize = 50;
         CanvasUtil.fillRectangle(
           canvas,
@@ -424,9 +448,7 @@ export default class Start extends Scene {
           snappedPos.y - gridSize / 2,
           gridSize,
           gridSize,
-          255, 255, 255,
-          0.3,
-          0
+          'rgba(255, 255, 255, 0.3)',
         );
       }
     }
@@ -436,8 +458,8 @@ export default class Start extends Scene {
       const mousePos = MouseListener.mouseCoordinates;
       const snappedPos = this.grid.snapToGrid(mousePos);
 
-      if (!this.getPortAtPosition(snappedPos) &&
-          this.routeNetwork.hasTile(snappedPos.x, snappedPos.y)) {
+      if (!this.getPortAtPosition(snappedPos)
+          && this.routeNetwork.hasTile(snappedPos.x, snappedPos.y)) {
         const gridSize = 50;
         CanvasUtil.fillRectangle(
           canvas,
@@ -445,9 +467,7 @@ export default class Start extends Scene {
           snappedPos.y - gridSize / 2,
           gridSize,
           gridSize,
-          231, 76, 60,
-          0.5,
-          0
+          'rgba(231, 76, 60, 0.5)',
         );
       }
     }
@@ -468,6 +488,9 @@ export default class Start extends Scene {
     // Draw UI
     this.drawUI(canvas);
 
+    // Draw button bar
+    this.buttonBar.draw(canvas, this.isCreatingLine);
+
     // Draw game over screen
     if (this.isGameOver) {
       this.drawGameOver(canvas);
@@ -486,9 +509,8 @@ export default class Start extends Scene {
       padding - 10,
       250,
       lineHeight * 5 + 10,
-      0, 0, 0,
-      0.5,
-      5
+      'rgba(0, 0, 0, 0.5)',
+      5,
     );
 
     // Score
@@ -501,7 +523,7 @@ export default class Start extends Scene {
       'sans-serif',
       18,
       '#ffffff',
-      700
+      700,
     );
     yPos += lineHeight;
 
@@ -515,7 +537,7 @@ export default class Start extends Scene {
       'sans-serif',
       16,
       '#ffffff',
-      400
+      400,
     );
     yPos += lineHeight;
 
@@ -530,7 +552,7 @@ export default class Start extends Scene {
       'sans-serif',
       16,
       tileColor,
-      400
+      400,
     );
     yPos += lineHeight;
 
@@ -544,7 +566,7 @@ export default class Start extends Scene {
       'sans-serif',
       16,
       '#ffffff',
-      400
+      400,
     );
     yPos += lineHeight;
 
@@ -562,7 +584,7 @@ export default class Start extends Scene {
       'sans-serif',
       16,
       '#ffffff',
-      400
+      400,
     );
     yPos += lineHeight;
 
@@ -576,32 +598,31 @@ export default class Start extends Scene {
       'sans-serif',
       16,
       '#ffffff',
-      400
+      400,
     );
 
-    // Draw legend at bottom
-    const legendY = canvas.height - 180;
+    // Draw info panel at bottom left (above button bar)
+    const legendY = canvas.height - this.buttonBar.getBarHeight() - 140;
     CanvasUtil.fillRectangle(
       canvas,
       padding - 10,
       legendY - 10,
-      320,
-      170,
-      0, 0, 0,
-      0.5,
-      5
+      280,
+      130,
+      'rgba(0, 0, 0, 0.5)',
+      5,
     );
 
     CanvasUtil.writeText(
       canvas,
-      this.isCreatingLine ? '🚌 LINE CREATION MODE' : 'Controls:',
+      this.isCreatingLine ? '🚌 LINE CREATION MODE' : '💡 Game Info:',
       padding,
       legendY + 15,
       'left',
       'sans-serif',
       14,
       this.isCreatingLine ? '#f39c12' : '#ffffff',
-      700
+      700,
     );
 
     if (this.isCreatingLine) {
@@ -614,116 +635,80 @@ export default class Start extends Scene {
         'sans-serif',
         12,
         'rgba(255, 255, 255, 0.9)',
-        400
-      );
-
-      CanvasUtil.writeText(
-        canvas,
-        'Enter: Finish line | Esc: Cancel',
-        padding,
-        legendY + 58,
-        'left',
-        'sans-serif',
-        12,
-        '#2ecc71',
-        400
+        400,
       );
 
       CanvasUtil.writeText(
         canvas,
         `Ports selected: ${this.currentLine?.getPortCount() || 0}`,
         padding,
-        legendY + 76,
-        'left',
-        'sans-serif',
-        12,
-        'rgba(255, 255, 255, 0.9)',
-        400
-      );
-    } else {
-      CanvasUtil.writeText(
-        canvas,
-        'L: Create transit line',
-        padding,
-        legendY + 40,
-        'left',
-        'sans-serif',
-        12,
-        '#3498db',
-        400
-      );
-
-      CanvasUtil.writeText(
-        canvas,
-        'Left Click: Place tiles',
-        padding,
         legendY + 58,
         'left',
         'sans-serif',
         12,
         'rgba(255, 255, 255, 0.9)',
-        400
+        400,
       );
 
       CanvasUtil.writeText(
         canvas,
-        'Right Click: Remove tiles',
+        'Use buttons below to complete',
         padding,
         legendY + 76,
         'left',
         'sans-serif',
+        11,
+        '#2ecc71',
+        400,
+      );
+    } else {
+      CanvasUtil.writeText(
+        canvas,
+        'Use buttons below to play',
+        padding,
+        legendY + 40,
+        'left',
+        'sans-serif',
         12,
-        '#e74c3c',
-        400
+        'rgba(255, 255, 255, 0.9)',
+        400,
+      );
+
+      CanvasUtil.writeText(
+        canvas,
+        'Tiles auto-connect adjacently',
+        padding,
+        legendY + 58,
+        'left',
+        'sans-serif',
+        11,
+        'rgba(255, 255, 255, 0.7)',
+        400,
       );
     }
 
     CanvasUtil.writeText(
       canvas,
-      'Tiles auto-connect when adjacent',
-      padding,
-      legendY + 94,
-      'left',
-      'sans-serif',
-      11,
-      'rgba(255, 255, 255, 0.7)',
-      400
-    );
-
-    CanvasUtil.writeText(
-      canvas,
       '🎁 Every 3 days: +10 tiles',
       padding,
-      legendY + 112,
+      legendY + 85,
       'left',
       'sans-serif',
       11,
       '#2ecc71',
-      400
+      400,
     );
 
     CanvasUtil.writeText(
       canvas,
       '🎁 Every 6 days: +1 boat/line',
       padding,
-      legendY + 130,
+      legendY + 103,
       'left',
       'sans-serif',
       11,
       '#2ecc71',
-      400
-    );
-
-    CanvasUtil.writeText(
-      canvas,
-      'Connect ports with colored lines!',
-      padding,
-      legendY + 148,
-      'left',
-      'sans-serif',
-      10,
-      'rgba(255, 255, 255, 0.6)',
-      400
+      400,
     );
   }
 
@@ -735,8 +720,7 @@ export default class Start extends Scene {
       0,
       canvas.width,
       canvas.height,
-      0, 0, 0,
-      0.7
+      'rgba(0, 0, 0, 0.7)',
     );
 
     // Draw game over panel
@@ -751,9 +735,8 @@ export default class Start extends Scene {
       panelY,
       panelWidth,
       panelHeight,
-      52, 73, 94,
-      0.95,
-      10
+      'rgba(52, 73, 94, 0.95)',
+      10,
     );
 
     // Game Over text
@@ -766,7 +749,7 @@ export default class Start extends Scene {
       'sans-serif',
       40,
       '#e74c3c',
-      700
+      700,
     );
 
     // Reason
@@ -779,7 +762,7 @@ export default class Start extends Scene {
       'sans-serif',
       20,
       '#ffffff',
-      400
+      400,
     );
 
     // Final score
@@ -792,7 +775,7 @@ export default class Start extends Scene {
       'sans-serif',
       24,
       '#2ecc71',
-      700
+      700,
     );
 
     // Days survived
@@ -805,7 +788,7 @@ export default class Start extends Scene {
       'sans-serif',
       18,
       '#ffffff',
-      400
+      400,
     );
 
     // Restart instruction
@@ -818,7 +801,7 @@ export default class Start extends Scene {
       'sans-serif',
       16,
       'rgba(255, 255, 255, 0.7)',
-      400
+      400,
     );
   }
 }

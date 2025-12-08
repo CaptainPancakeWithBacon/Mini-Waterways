@@ -23,31 +23,37 @@ export interface RouteTile {
  */
 export default class RouteNetwork {
   private tiles: Map<string, RouteTile> = new Map();
+
   private gridSize: number = 50;
 
   /**
    * Creates a new RouteNetwork instance
+   *
    * @param gridSize The size of each grid cell (default: 50)
    */
-  constructor(gridSize: number = 50) {
+  public constructor(gridSize: number = 50) {
     this.gridSize = gridSize;
   }
 
   /**
    * Generates a unique key for a tile position
+   *
    * @param x X coordinate
    * @param y Y coordinate
    * @returns String key in format "x,y"
    */
+  // eslint-disable-next-line class-methods-use-this
   private getKey(x: number, y: number): string {
     return `${x},${y}`;
   }
 
   /**
    * Parses a tile key back into coordinates
+   *
    * @param key The key string to parse
    * @returns Object containing x and y coordinates
    */
+  // eslint-disable-next-line class-methods-use-this
   private parseKey(key: string): { x: number; y: number } {
     const [x, y] = key.split(',').map(Number);
     return { x, y };
@@ -56,6 +62,7 @@ export default class RouteNetwork {
   /**
    * Adds a new tile to the network
    * Automatically connects to adjacent tiles
+   *
    * @param x X coordinate of the tile
    * @param y Y coordinate of the tile
    * @param color Color of the tile (default: blue)
@@ -81,6 +88,7 @@ export default class RouteNetwork {
   /**
    * Removes a tile from the network
    * Port tiles cannot be removed
+   *
    * @param x X coordinate of the tile
    * @param y Y coordinate of the tile
    * @returns True if the tile was removed, false otherwise
@@ -112,6 +120,7 @@ export default class RouteNetwork {
 
   /**
    * Checks if a tile exists at the given coordinates
+   *
    * @param x X coordinate
    * @param y Y coordinate
    * @returns True if a tile exists at this position
@@ -122,6 +131,7 @@ export default class RouteNetwork {
 
   /**
    * Gets the tile at the specified coordinates
+   *
    * @param x X coordinate
    * @param y Y coordinate
    * @returns The tile if found, undefined otherwise
@@ -133,6 +143,7 @@ export default class RouteNetwork {
   /**
    * Updates connections for a tile
    * Connects the tile to all adjacent tiles in 4 directions
+   *
    * @param x X coordinate of the tile
    * @param y Y coordinate of the tile
    */
@@ -143,9 +154,9 @@ export default class RouteNetwork {
 
     // Check all 4 adjacent directions
     const directions = [
-      { dx: 1, dy: 0 },  // Right
+      { dx: 1, dy: 0 }, // Right
       { dx: -1, dy: 0 }, // Left
-      { dx: 0, dy: 1 },  // Down
+      { dx: 0, dy: 1 }, // Down
       { dx: 0, dy: -1 }, // Up
     ];
 
@@ -165,6 +176,7 @@ export default class RouteNetwork {
 
   /**
    * Finds a path between two points using breadth-first search
+   *
    * @param startX Starting X coordinate
    * @param startY Starting Y coordinate
    * @param endX Ending X coordinate
@@ -185,7 +197,8 @@ export default class RouteNetwork {
     const parent = new Map<string, string>();
 
     while (queue.length > 0) {
-      const current = queue.shift()!;
+      const current = queue.shift();
+      if (!current) continue;
 
       if (current === endKey) {
         // Reconstruct path
@@ -195,7 +208,9 @@ export default class RouteNetwork {
         while (node !== startKey) {
           const pos = this.parseKey(node);
           path.unshift({ x: pos.x, y: pos.y });
-          node = parent.get(node)!;
+          const parentNode = parent.get(node);
+          if (!parentNode) break;
+          node = parentNode;
         }
 
         const startPos = this.parseKey(startKey);
@@ -221,6 +236,7 @@ export default class RouteNetwork {
 
   /**
    * Gets all tiles in the network
+   *
    * @returns Array of all route tiles
    */
   public getTiles(): RouteTile[] {
@@ -229,6 +245,7 @@ export default class RouteNetwork {
 
   /**
    * Gets the total number of tiles in the network
+   *
    * @returns Total tile count
    */
   public getTileCount(): number {
@@ -237,6 +254,7 @@ export default class RouteNetwork {
 
   /**
    * Gets the count of player-placed tiles (excluding port tiles)
+   *
    * @returns Number of player-placed tiles
    */
   public getPlayerTileCount(): number {
@@ -252,6 +270,7 @@ export default class RouteNetwork {
   /**
    * Draws the route network on the canvas
    * Renders tiles and their connections
+   *
    * @param canvas The canvas to draw on
    */
   public draw(canvas: HTMLCanvasElement): void {
@@ -263,9 +282,7 @@ export default class RouteNetwork {
         tile.y - this.gridSize / 2,
         this.gridSize,
         this.gridSize,
-        52, 152, 219, // Blue
-        0.6,
-        0
+        'rgba(52, 152, 219, 0.6)',
       );
 
       // Draw border
@@ -275,10 +292,7 @@ export default class RouteNetwork {
         tile.y - this.gridSize / 2,
         this.gridSize,
         this.gridSize,
-        255, 255, 255,
-        0.8,
-        2,
-        0
+        'rgba(255, 255, 255, 0.8)',
       );
 
       // Draw connections as lines to adjacent tiles
@@ -293,9 +307,8 @@ export default class RouteNetwork {
             tile.y,
             conn.x,
             conn.y,
-            255, 255, 255,
-            0.5,
-            4
+            'rgba(255, 255, 255, 0.5)',
+            4,
           );
         }
       }
@@ -311,6 +324,7 @@ export default class RouteNetwork {
 
   /**
    * Checks if two points are connected through the network
+   *
    * @param startX Starting X coordinate
    * @param startY Starting Y coordinate
    * @param endX Ending X coordinate
@@ -323,6 +337,7 @@ export default class RouteNetwork {
 
   /**
    * Gets all tiles within a certain distance of a point
+   *
    * @param x X coordinate of the center point
    * @param y Y coordinate of the center point
    * @param radius Maximum distance from the center point

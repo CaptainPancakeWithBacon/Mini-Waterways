@@ -21,7 +21,19 @@ module.exports = {
     'linebreak-style': 'off',
     'max-len': ['error', { 'code': 300 }],
     "no-param-reassign": "off",
-    'no-plusplus': ["error", { "allowForLoopAfterthoughts": true }],
+    'no-plusplus': 'off',
+    'no-continue': 'off',
+    'no-restricted-syntax': [
+      'error',
+      {
+        selector: 'LabeledStatement',
+        message: 'Labels are a form of GOTO; using them makes code confusing and hard to maintain and understand.',
+      },
+      {
+        selector: 'WithStatement',
+        message: '`with` is disallowed in strict mode because it makes code impossible to predict and optimize.',
+      },
+    ],
     'jsdoc/require-jsdoc': [
       'error',
       {
@@ -53,6 +65,13 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'error',
     '@typescript-eslint/no-inferrable-types': 'off',
     '@typescript-eslint/triple-slash-reference': 'off',
+    '@typescript-eslint/no-unused-vars': [
+      'error',
+      {
+        'argsIgnorePattern': '^_',
+        'varsIgnorePattern': '^_',
+      }
+    ],
     '@typescript-eslint/naming-convention': [
       'error',
       {
@@ -85,6 +104,10 @@ module.exports = {
       {
         'selector': 'typeLike',
         'format': ['PascalCase']
+      },
+      {
+        'selector': 'enumMember',
+        'format': ['UPPER_CASE', 'PascalCase']
       }
     ],
   }

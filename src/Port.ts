@@ -29,32 +29,44 @@ export interface Passenger {
  */
 export default class Port {
   private position: Point;
+
   private radius: number = 30;
+
   private color: string;
+
   private name: string;
+
   private type: PortType;
 
   // Passenger/demand system
   private passengers: Passenger[] = [];
+
   private maxCapacity: number = 20;
+
   private passengerSpawnInterval: number = 2000; // Spawn every 2 seconds
+
   private passengerSpawnTimer: number = 0;
+
   private overflowTimer: number = 0;
+
   private overflowThreshold: number = 5000; // 5 seconds of overflow
+
   private allPortTypes: PortType[] = [PortType.RESIDENTIAL, PortType.INDUSTRIAL, PortType.COMMERCIAL];
 
   // Visual properties
   private pulseAnimation: number = 0;
+
   private isOverflowing: boolean = false;
 
   /**
    * Creates a new Port instance
+   *
    * @param x X coordinate of the port
    * @param y Y coordinate of the port
    * @param name Display name of the port
    * @param type Type of port (default: RESIDENTIAL)
    */
-  constructor(x: number, y: number, name: string, type: PortType = PortType.RESIDENTIAL) {
+  public constructor(x: number, y: number, name: string, type: PortType = PortType.RESIDENTIAL) {
     this.position = { x, y };
     this.name = name;
     this.type = type;
@@ -63,9 +75,11 @@ export default class Port {
 
   /**
    * Gets the color associated with a port type
+   *
    * @param type The port type
    * @returns Hex color string
    */
+  // eslint-disable-next-line class-methods-use-this
   private getColorForType(type: PortType): string {
     switch (type) {
       case PortType.RESIDENTIAL:
@@ -81,6 +95,7 @@ export default class Port {
 
   /**
    * Gets the position of the port
+   *
    * @returns A copy of the port's position
    */
   public getPosition(): Point {
@@ -89,6 +104,7 @@ export default class Port {
 
   /**
    * Gets the name of the port
+   *
    * @returns The port's name
    */
   public getName(): string {
@@ -97,6 +113,7 @@ export default class Port {
 
   /**
    * Gets the type of the port
+   *
    * @returns The port's type
    */
   public getType(): PortType {
@@ -105,6 +122,7 @@ export default class Port {
 
   /**
    * Checks if a point is within the port's boundaries
+   *
    * @param point The point to check
    * @returns True if the point is inside the port
    */
@@ -117,20 +135,22 @@ export default class Port {
   /**
    * Generates a new passenger with a random destination
    * Destination is always a different port type than this one
+   *
    * @returns A new passenger object
    */
   private generatePassenger(): Passenger {
     // Generate passenger with random destination (different from current port)
-    const availableTypes = this.allPortTypes.filter(t => t !== this.type);
+    const availableTypes = this.allPortTypes.filter((t) => t !== this.type);
     const destinationType = availableTypes[Math.floor(Math.random() * availableTypes.length)];
     return {
       destinationType,
-      color: this.getColorForType(destinationType)
+      color: this.getColorForType(destinationType),
     };
   }
 
   /**
    * Adds a specified number of passengers to the port
+   *
    * @param count Number of passengers to add
    */
   public addPassengers(count: number): void {
@@ -141,6 +161,7 @@ export default class Port {
 
   /**
    * Removes passengers from the port
+   *
    * @param count Maximum number of passengers to remove
    * @param targetType Optional port type to filter passengers by destination
    * @returns Array of removed passengers
@@ -170,6 +191,7 @@ export default class Port {
 
   /**
    * Gets the current number of passengers waiting at the port
+   *
    * @returns Number of passengers
    */
   public getPassengers(): number {
@@ -178,15 +200,17 @@ export default class Port {
 
   /**
    * Gets the number of passengers heading to a specific port type
+   *
    * @param destinationType The destination port type to count
    * @returns Number of passengers heading to that type
    */
   public getPassengersByDestination(destinationType: PortType): number {
-    return this.passengers.filter(p => p.destinationType === destinationType).length;
+    return this.passengers.filter((p) => p.destinationType === destinationType).length;
   }
 
   /**
    * Checks if the port is at maximum capacity
+   *
    * @returns True if at capacity
    */
   public isAtCapacity(): boolean {
@@ -196,6 +220,7 @@ export default class Port {
   /**
    * Updates the port state
    * Handles passenger spawning, animations, and overflow detection
+   *
    * @param elapsed Time elapsed since last update in milliseconds
    */
   public update(elapsed: number): void {
@@ -222,6 +247,7 @@ export default class Port {
   /**
    * Checks if the port has overflowed
    * Port overflows when at capacity for too long
+   *
    * @returns True if the port has overflowed
    */
   public hasOverflowed(): boolean {
@@ -230,6 +256,7 @@ export default class Port {
 
   /**
    * Gets the progress towards overflow
+   *
    * @returns Value between 0 and 1 indicating overflow progress
    */
   public getOverflowProgress(): number {
@@ -239,6 +266,7 @@ export default class Port {
   /**
    * Draws the port on the canvas
    * Renders the port circle, passengers, and overflow indicators
+   *
    * @param canvas The canvas to draw on
    */
   public draw(canvas: HTMLCanvasElement): void {
@@ -260,7 +288,7 @@ export default class Port {
         this.position.y,
         currentRadius,
         -Math.PI / 2,
-        -Math.PI / 2 + fillAngle
+        -Math.PI / 2 + fillAngle,
       );
       ctx.closePath();
       ctx.fillStyle = this.isOverflowing ? '#e74c3c' : this.color;
@@ -276,7 +304,7 @@ export default class Port {
       this.position.y,
       currentRadius,
       -Math.PI / 2 + fillAngle,
-      -Math.PI / 2 + Math.PI * 2
+      -Math.PI / 2 + Math.PI * 2,
     );
     ctx.closePath();
     ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
@@ -288,8 +316,7 @@ export default class Port {
       this.position.x,
       this.position.y,
       currentRadius,
-      255, 255, 255,
-      1
+      'white',
     );
 
     // Draw inner shape based on type
@@ -306,7 +333,7 @@ export default class Port {
         'sans-serif',
         16,
         '#ffffff',
-        700
+        700,
       );
     }
 
@@ -344,7 +371,7 @@ export default class Port {
           'sans-serif',
           9,
           'rgba(255, 255, 255, 0.7)',
-          400
+          400,
         );
       }
     }
@@ -359,19 +386,19 @@ export default class Port {
       'sans-serif',
       12,
       '#ffffff',
-      600
+      600,
     );
 
     // Draw overflow warning
     if (this.isOverflowing) {
       const warningRadius = currentRadius + 10;
+      const warningOpacity = 0.5 + Math.sin(this.pulseAnimation * 5) * 0.5;
       CanvasUtil.drawCircle(
         canvas,
         this.position.x,
         this.position.y,
         warningRadius,
-        231, 76, 60,
-        0.5 + Math.sin(this.pulseAnimation * 5) * 0.5
+        `rgba(231, 76, 60, ${warningOpacity})`,
       );
     }
   }
@@ -379,6 +406,7 @@ export default class Port {
   /**
    * Draws an icon indicating the port type
    * Renders different shapes for residential, industrial, and commercial types
+   *
    * @param canvas The canvas to draw on
    */
   private drawTypeIndicator(canvas: HTMLCanvasElement): void {
@@ -415,6 +443,12 @@ export default class Port {
         ctx.strokeRect(2, -4, 3, 3);
         ctx.strokeRect(-4, 2, 3, 3);
         ctx.strokeRect(2, 2, 3, 3);
+        break;
+      default:
+        // Draw generic circle for unknown type
+        ctx.beginPath();
+        ctx.arc(0, 0, 6, 0, 2 * Math.PI);
+        ctx.stroke();
         break;
     }
 

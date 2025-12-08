@@ -1,6 +1,4 @@
-import { Point } from './Boat.js';
-import { Boat } from './Boat.js';
-import CanvasUtil from './utilities/CanvasUtil.js';
+import { Point, Boat } from './Boat.js';
 import Port from './Port.js';
 
 /**
@@ -25,17 +23,23 @@ let nextColorIndex = 0;
  */
 export default class Route {
   private points: Point[] = [];
+
   private startPort: Port | null = null;
+
   private endPort: Port | null = null;
+
   private color: string;
+
   private lineWidth: number = 8;
+
   private boats: Boat[] = [];
 
   /**
    * Creates a new Route instance
+   *
    * @param startPort Optional starting port for the route
    */
-  constructor(startPort?: Port) {
+  public constructor(startPort?: Port) {
     if (startPort) {
       this.startPort = startPort;
       this.points.push(startPort.getPosition());
@@ -47,6 +51,7 @@ export default class Route {
 
   /**
    * Adds a waypoint to the route
+   *
    * @param point The point to add to the route
    */
   public addPoint(point: Point): void {
@@ -56,6 +61,7 @@ export default class Route {
   /**
    * Sets the end port for the route
    * Updates the last point to match the port's position
+   *
    * @param port The port to set as the destination
    */
   public setEndPort(port: Port): void {
@@ -67,6 +73,7 @@ export default class Route {
 
   /**
    * Gets all waypoints in the route
+   *
    * @returns A copy of the route's points array
    */
   public getPoints(): Point[] {
@@ -75,6 +82,7 @@ export default class Route {
 
   /**
    * Checks if the route has both a start and end port
+   *
    * @returns True if the route is complete
    */
   public isComplete(): boolean {
@@ -83,6 +91,7 @@ export default class Route {
 
   /**
    * Gets the starting port of the route
+   *
    * @returns The start port or null if not set
    */
   public getStartPort(): Port | null {
@@ -91,6 +100,7 @@ export default class Route {
 
   /**
    * Gets the ending port of the route
+   *
    * @returns The end port or null if not set
    */
   public getEndPort(): Port | null {
@@ -99,6 +109,7 @@ export default class Route {
 
   /**
    * Gets the color assigned to this route
+   *
    * @returns The route's color as a hex string
    */
   public getColor(): string {
@@ -107,6 +118,7 @@ export default class Route {
 
   /**
    * Adds a boat to this route
+   *
    * @param boat The boat to add
    */
   public addBoat(boat: Boat): void {
@@ -115,6 +127,7 @@ export default class Route {
 
   /**
    * Gets all boats currently on this route
+   *
    * @returns Array of boats on the route
    */
   public getBoats(): Boat[] {
@@ -123,6 +136,7 @@ export default class Route {
 
   /**
    * Removes a boat from this route
+   *
    * @param boat The boat to remove
    */
   public removeBoat(boat: Boat): void {
@@ -165,6 +179,7 @@ export default class Route {
   /**
    * Draws the route on the canvas
    * Renders the route path, center line, and direction arrows
+   *
    * @param canvas The canvas to draw on
    */
   public draw(canvas: HTMLCanvasElement): void {
@@ -224,6 +239,7 @@ export default class Route {
   /**
    * Draws bidirectional arrows along the route
    * Shows arrows in both directions to indicate two-way travel
+   *
    * @param ctx The 2D rendering context to draw with
    */
   private drawDirectionArrows(ctx: CanvasRenderingContext2D): void {

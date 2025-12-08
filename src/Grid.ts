@@ -1,5 +1,4 @@
 import { Point } from './Boat.js';
-import CanvasUtil from './utilities/CanvasUtil.js';
 
 /**
  * Represents a grid system for positioning and snapping elements
@@ -7,16 +6,19 @@ import CanvasUtil from './utilities/CanvasUtil.js';
  */
 export default class Grid {
   private gridSize: number = 50;
+
   private width: number;
+
   private height: number;
 
   /**
    * Creates a new Grid instance
+   *
    * @param width The total width of the grid area
    * @param height The total height of the grid area
    * @param gridSize The size of each grid cell (default: 50)
    */
-  constructor(width: number, height: number, gridSize: number = 50) {
+  public constructor(width: number, height: number, gridSize: number = 50) {
     this.width = width;
     this.height = height;
     this.gridSize = gridSize;
@@ -24,6 +26,7 @@ export default class Grid {
 
   /**
    * Snaps a point to the nearest grid position
+   *
    * @param point The point to snap
    * @returns A new point aligned to the grid
    */
@@ -36,6 +39,7 @@ export default class Grid {
 
   /**
    * Gets the current grid cell size
+   *
    * @returns The size of each grid cell in pixels
    */
   public getGridSize(): number {
@@ -45,6 +49,7 @@ export default class Grid {
   /**
    * Draws the grid lines on the canvas
    * Renders both regular grid lines and stronger accent lines
+   *
    * @param canvas The canvas to draw on
    */
   public draw(canvas: HTMLCanvasElement): void {
@@ -91,6 +96,7 @@ export default class Grid {
 
   /**
    * Generates a random position on the grid within the specified margin
+   *
    * @param margin Distance from edges to avoid (default: 100)
    * @returns A random grid-aligned point
    */
