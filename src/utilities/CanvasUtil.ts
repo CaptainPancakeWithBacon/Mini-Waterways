@@ -179,54 +179,31 @@ export default class CanvasUtil {
    * @param centerX the x-coordinate of the center of the circle
    * @param centerY the y-coordinate of the center of the circle
    * @param radius the radius of the circle
-   * @param red red value of color
-   * @param green green value of color
-   * @param blue blue value of volor
-   * @param opacity opacity of the circle
+   * @param color the color of the circle outline
    */
-  public static drawCircle(canvas: HTMLCanvasElement, centerX: number, centerY: number, radius: number, red: number = 255, green: number = 255, blue: number = 255, opacity: number = 1): void {
+  public static drawCircle(canvas: HTMLCanvasElement, centerX: number, centerY: number, radius: number, color: string = 'white'): void {
     const ctx: CanvasRenderingContext2D = CanvasUtil.getCanvasContext(canvas);
     ctx.beginPath();
-    ctx.strokeStyle = `rgba(${red}, ${green}, ${blue}, ${opacity})`;
+    ctx.strokeStyle = color;
     ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
     ctx.stroke();
   }
 
   /**
-   * Draw a rectangle outline with optional border radius to the canvas
+   * Draw a rectangle outline to the canvas
    *
    * @param canvas the canvas to draw to
    * @param dx the x-coordinate of the rectangle's top-left corner
    * @param dy the y-coordinate of the rectangle's top-left corner
    * @param width the width of the rectangle
    * @param height the height of the rectangle
-   * @param red is the red color value of the rectangle
-   * @param green is the green color value of the rectangle
-   * @param blue is the blue color value of the rectangle
-   * @param opacity is the opacity of the rectangle
-   * @param lineWidth is the width of the border
-   * @param borderRadius is the border radius of the rectangle
+   * @param color the color of the rectangle outline
    */
-  public static drawRectangle(canvas: HTMLCanvasElement, dx: number, dy: number, width: number, height: number, red: number = 255, green: number = 255, blue: number = 255, opacity: number = 1, lineWidth: number = 1, borderRadius: number = 0): void {
+  public static drawRectangle(canvas: HTMLCanvasElement, dx: number, dy: number, width: number, height: number, color: string = 'white'): void {
     const ctx: CanvasRenderingContext2D = CanvasUtil.getCanvasContext(canvas);
     ctx.beginPath();
-    ctx.strokeStyle = `rgba(${red}, ${green}, ${blue}, ${opacity})`;
-    ctx.lineWidth = lineWidth;
-
-    // Top left corner
-    ctx.moveTo(dx + borderRadius, dy);
-    ctx.arcTo(dx + width, dy, dx + width, dy + height, borderRadius);
-
-    // Top right corner
-    ctx.arcTo(dx + width, dy + height, dx, dy + height, borderRadius);
-
-    // Bottom right corner
-    ctx.arcTo(dx, dy + height, dx, dy, borderRadius);
-
-    // Bottom left corner
-    ctx.arcTo(dx, dy, dx + borderRadius, dy, borderRadius);
-
-    ctx.closePath();
+    ctx.strokeStyle = color;
+    ctx.rect(dx, dy, width, height);
     ctx.stroke();
   }
 
@@ -237,52 +214,18 @@ export default class CanvasUtil {
    * @param x1 x position of the starting point of drawn line
    * @param y1 y position of the starting point of drawn line
    * @param x2 x position of the ending point of drawn line
-   * @param y2 y position of the ennding point of drawn line
-   * @param red the red color value of the line
-   * @param green the green color value of the line
-   * @param blue the blue color value of the line
-   * @param opacity the opacity of the line
+   * @param y2 y position of the ending point of drawn line
+   * @param color the color of the line
    * @param lineWidth the width of the line
    */
-  public static drawLine(canvas: HTMLCanvasElement, x1: number, y1: number, x2: number, y2: number, red: number = 255, green: number = 255, blue: number = 255, opacity: number = 1, lineWidth: number = 1): void {
+  public static drawLine(canvas: HTMLCanvasElement, x1: number, y1: number, x2: number, y2: number, color: string = 'white', lineWidth: number = 1): void {
     const ctx: CanvasRenderingContext2D = CanvasUtil.getCanvasContext(canvas);
     ctx.beginPath();
     ctx.lineWidth = lineWidth;
-    ctx.strokeStyle = `rgba(${red}, ${green}, ${blue}, ${opacity})`;
+    ctx.strokeStyle = color;
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
     ctx.stroke();
-  }
-
-  /**
-   * Draw a finish line with alternating black and white squares to the canvas
-   *
-   * @param canvas selected canvas
-   * @param x1 x position of the starting point of the finish line
-   * @param y1 y position of the starting point of the finish line
-   * @param x2 x position of the ending point of the finish line
-   * @param y2 y position of the ending point of the finish line
-   * @param squareSize the size of each square in the finish line
-   */
-  public static drawFinishLine(canvas: HTMLCanvasElement, x1: number, y1: number, x2: number, y2: number, squareSize: number = 10): void {
-    const ctx: CanvasRenderingContext2D = CanvasUtil.getCanvasContext(canvas);
-    const deltaX = x2 - x1;
-    const deltaY = y2 - y1;
-    const length = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
-    const angle = Math.atan2(deltaY, deltaX);
-
-    ctx.save();
-    ctx.translate(x1, y1);
-    ctx.rotate(angle);
-
-    for (let i = 0; i < length; i += squareSize) {
-      for (let j = -1; j <= 1; j += 2) { // Draw two rows of squares
-        ctx.fillStyle = ((i / squareSize) + (j + 1) / 2) % 2 === 0 ? 'black' : 'white';
-        ctx.fillRect(i, j * (squareSize / 2), squareSize, squareSize);
-      }
-    }
-
-    ctx.restore();
   }
 
   /**
@@ -292,15 +235,12 @@ export default class CanvasUtil {
    * @param centerX the x-coordinate of the center of the circle
    * @param centerY the y-coordinate of the center of the circle
    * @param radius the radius of the circle
-   * @param red the red color value
-   * @param green the green color value
-   * @param blue the blue color value
-   * @param opacity the opacity
+   * @param color the color of the circle
    */
-  public static fillCircle(canvas: HTMLCanvasElement, centerX: number, centerY: number, radius: number, red: number = 255, green: number = 255, blue: number = 255, opacity: number = 1): void {
+  public static fillCircle(canvas: HTMLCanvasElement, centerX: number, centerY: number, radius: number, color: string = 'white'): void {
     const ctx: CanvasRenderingContext2D = CanvasUtil.getCanvasContext(canvas);
     ctx.beginPath();
-    ctx.fillStyle = `rgba(${red}, ${green}, ${blue}, ${opacity})`;
+    ctx.fillStyle = color;
     ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
     ctx.fill();
   }
@@ -309,112 +249,35 @@ export default class CanvasUtil {
    * Draw a filled rectangle to the canvas
    *
    * @param canvas the canvas to draw to
-   * @param dx the x-coordinate of the rectangle's left left corner
-   * @param dy the y-coordinate of the rectangle's left left corner
-   * @param width the width of the rectangle from x to the right
-   * @param height the height of the rectrangle from y downwards
-   * @param red is the red color value of the rectangle
-   * @param green is the green color value of the rectangle
-   * @param blue is the blue color value of the rectangle
-   * @param opacity is the opacity of the rectangle
-   * @param borderRadius is the border radius of the rectangle
-   * @param rotation the rotation in degrees
+   * @param dx the x-coordinate of the rectangle's top-left corner
+   * @param dy the y-coordinate of the rectangle's top-left corner
+   * @param width the width of the rectangle
+   * @param height the height of the rectangle
+   * @param color the color of the rectangle
+   * @param borderRadius optional border radius for rounded corners
    */
-  public static fillRectangle(canvas: HTMLCanvasElement, dx: number, dy: number, width: number, height: number, red: number = 255, green: number = 255, blue: number = 255, opacity: number = 1, borderRadius: number = 0, rotation: number = 0): void {
-    const ctx: CanvasRenderingContext2D = CanvasUtil.getCanvasContext(canvas);
-
-    ctx.save();
-    const centerX = dx + width / 2;
-    const centerY = dy + height / 2;
-    ctx.translate(centerX, centerY);
-    ctx.rotate(rotation * (Math.PI / 180));
-    ctx.translate(-centerX, -centerY);
-
-    ctx.beginPath();
-    ctx.moveTo(dx + borderRadius, dy);
-    ctx.lineTo(dx + width - borderRadius, dy);
-    ctx.arcTo(dx + width, dy, dx + width, dy + borderRadius, borderRadius);
-    ctx.lineTo(dx + width, dy + height - borderRadius);
-    ctx.arcTo(dx + width, dy + height, dx + width - borderRadius, dy + height, borderRadius);
-    ctx.lineTo(dx + borderRadius, dy + height);
-    ctx.arcTo(dx, dy + height, dx, dy + height - borderRadius, borderRadius);
-    ctx.lineTo(dx, dy + borderRadius);
-    ctx.arcTo(dx, dy, dx + borderRadius, dy, borderRadius);
-    ctx.closePath();
-    ctx.fillStyle = `rgba(${red}, ${green}, ${blue}, ${opacity})`;
-    ctx.fill();
-
-    // Restore the original context state
-    ctx.restore();
-  }
-
-  /**
-   * Draw a filled rectangle with a gradient to the canvas
-   *
-   * @param canvas the canvas to draw to
-   * @param dx the x-coordinate of the rectangle's left left corner
-   * @param dy the y-coordinate of the rectangle's left left corner
-   * @param width the width of the rectangle from x to the right
-   * @param height the height of the rectrangle from y downwards
-   * @param colors an array of color stops for the gradient, each color stop is an object with properties `color` and `stop`
-   * @param angle the angle of the gradient in degrees (0 is top to bottom, 180 is bottom to top, etc.)
-   * @param borderRadius the border radius of the rectangle
-   */
-  public static fillRectangleWithGradient(canvas: HTMLCanvasElement, dx: number, dy: number, width: number, height: number, colors: { red: number; green: number; blue: number; opacity: number; stop: number }[], angle: number = 0, borderRadius: number = 0): void {
+  public static fillRectangle(canvas: HTMLCanvasElement, dx: number, dy: number, width: number, height: number, color: string = 'white', borderRadius: number = 0): void {
     const ctx: CanvasRenderingContext2D = CanvasUtil.getCanvasContext(canvas);
     ctx.beginPath();
+    ctx.fillStyle = color;
 
-    ctx.moveTo(dx + borderRadius, dy);
-    ctx.lineTo(dx + width - borderRadius, dy);
-    ctx.arcTo(dx + width, dy, dx + width, dy + borderRadius, borderRadius);
-    ctx.lineTo(dx + width, dy + height - borderRadius);
-    ctx.arcTo(dx + width, dy + height, dx + width - borderRadius, dy + height, borderRadius);
-    ctx.lineTo(dx + borderRadius, dy + height);
-    ctx.arcTo(dx, dy + height, dx, dy + height - borderRadius, borderRadius);
-    ctx.lineTo(dx, dy + borderRadius);
-    ctx.arcTo(dx, dy, dx + borderRadius, dy, borderRadius);
-    ctx.closePath();
-
-    // Calculate gradient start and end points based on angle
-    const radians = angle * (Math.PI / 180);
-    const x0 = dx + width / 2 + (width / 2) * Math.cos(radians);
-    const y0 = dy + height / 2 - (height / 2) * Math.sin(radians);
-    const x1 = dx + width / 2 - (width / 2) * Math.cos(radians);
-    const y1 = dy + height / 2 + (height / 2) * Math.sin(radians);
-
-    const gradient = ctx.createLinearGradient(x0, y0, x1, y1);
-
-    colors.forEach(({
-      red, green, blue, opacity, stop,
-    }) => {
-      const color = `rgba(${red}, ${green}, ${blue}, ${opacity})`;
-      gradient.addColorStop(stop, color);
-    });
-
-    ctx.fillStyle = gradient;
-    ctx.fill();
-  }
-
-  public static getPixelColor(canvas: HTMLCanvasElement, x: number, y: number): ImageData {
-    const context = canvas.getContext('2d', { willReadFrequently: true });
-    if (context) {
-      return context.getImageData(x, y, 1, 1);
+    if (borderRadius > 0) {
+      // Draw rounded rectangle
+      ctx.moveTo(dx + borderRadius, dy);
+      ctx.lineTo(dx + width - borderRadius, dy);
+      ctx.arcTo(dx + width, dy, dx + width, dy + borderRadius, borderRadius);
+      ctx.lineTo(dx + width, dy + height - borderRadius);
+      ctx.arcTo(dx + width, dy + height, dx + width - borderRadius, dy + height, borderRadius);
+      ctx.lineTo(dx + borderRadius, dy + height);
+      ctx.arcTo(dx, dy + height, dx, dy + height - borderRadius, borderRadius);
+      ctx.lineTo(dx, dy + borderRadius);
+      ctx.arcTo(dx, dy, dx + borderRadius, dy, borderRadius);
+      ctx.closePath();
+    } else {
+      // Draw regular rectangle
+      ctx.rect(dx, dy, width, height);
     }
-    throw new Error('Unable to get canvas context');
-  }
 
-  /**
-   * Rotate an image on an HTML5 canvas.
-   *
-   * @param canvas the canvas to draw to
-   * @param image the image to rotate
-   * @param degrees the degrees to rotate the image
-   */
-  public static rotateImage(canvas: HTMLCanvasElement, image: HTMLImageElement, degrees: number): void {
-    const ctx: CanvasRenderingContext2D = CanvasUtil.getCanvasContext(canvas);
-    ctx.translate(canvas.width / 2, canvas.height / 2);
-    ctx.rotate((degrees * Math.PI) / 180);
-    ctx.drawImage(image, -image.width / 2, -image.height / 2);
-    ctx.restore();
+    ctx.fill();
   }
 }

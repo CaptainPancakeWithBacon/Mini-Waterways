@@ -11,12 +11,16 @@ import CanvasUtil from './utilities/CanvasUtil.js';
  */
 class MiniWaterways extends Game {
   private canvas: HTMLCanvasElement;
+
   private keyListener: KeyListener;
+
   private mouseListener: MouseListener;
+
   private currentScene: Scene;
 
   /**
    * Creates a new MiniWaterways game instance
+   *
    * @param canvas The HTML canvas element to render the game on
    */
   public constructor(canvas: HTMLCanvasElement) {
@@ -46,6 +50,7 @@ class MiniWaterways extends Game {
 
   /**
    * Updates the game state
+   *
    * @param elapsed Time elapsed since last update in milliseconds
    * @returns True to continue the game loop
    */

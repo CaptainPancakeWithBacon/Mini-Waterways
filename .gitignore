@@ -202,5 +202,6 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 .claude
+CLAUDE.md
 
 # End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,linux,windows,node

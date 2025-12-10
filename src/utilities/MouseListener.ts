@@ -32,6 +32,7 @@ export default class MouseListener {
   /**
    * Creates a new MouseListener instance
    * Sets up event listeners for mouse interactions on the canvas
+   *
    * @param canvas The canvas element to track mouse events on
    * @param disableContextMenu Whether to disable the context (right-click) menu (default: false)
    */
@@ -71,6 +72,7 @@ export default class MouseListener {
 
   /**
    * Check if a button was pressed this frame.
+   *
    * @param buttonCode the mouse button to check
    * @returns `true` when the specified button was pressed
    */

@@ -16,38 +16,48 @@ export interface Point {
  * Handles passenger transport, pathfinding, and movement
  */
 export class Boat {
-  position: Point;
-  speed = 3;
-  path: Point[] = [];
-  pathIndex = 0;
+  public position: Point;
+
+  public speed = 3;
+
+  public path: Point[] = [];
+
+  public pathIndex = 0;
+
   private angle: number = 0;
 
   // Passenger system
   private passengers: Passenger[] = [];
+
   private maxCapacity: number = 10;
+
   private color: string = '#3498db';
 
   // Network-based travel
   private startPort: Port;
+
   private endPort: Port;
+
   private routeNetwork: RouteNetwork;
+
   private needsNewPath: boolean = false;
 
   // Transit line support
-  private transitLine: any = null; // Will be TransitLine but avoiding circular dependency
+  private transitLine: unknown = null; // Will be TransitLine but avoiding circular dependency
 
   /**
    * Creates a new Boat instance
+   *
    * @param startPort The port where the boat starts
    * @param endPort The destination port
    * @param routeNetwork The route network to navigate
    * @param color Visual color of the boat (default: blue)
    */
-  constructor(
+  public constructor(
     startPort: Port,
     endPort: Port,
     routeNetwork: RouteNetwork,
-    color: string = '#3498db'
+    color: string = '#3498db',
   ) {
     this.startPort = startPort;
     this.endPort = endPort;
@@ -71,7 +81,7 @@ export class Boat {
       startPos.x,
       startPos.y,
       endPos.x,
-      endPos.y
+      endPos.y,
     );
 
     if (path) {
@@ -86,6 +96,7 @@ export class Boat {
 
   /**
    * Loads passengers onto the boat
+   *
    * @param passengers Array of passengers to load
    * @returns Number of passengers actually loaded (limited by capacity)
    */
@@ -98,6 +109,7 @@ export class Boat {
 
   /**
    * Unloads all passengers from the boat
+   *
    * @returns Array of all passengers that were on the boat
    */
   public unloadPassengers(): Passenger[] {
@@ -108,6 +120,7 @@ export class Boat {
 
   /**
    * Gets the current number of passengers on the boat
+   *
    * @returns Number of passengers
    */
   public getPassengers(): number {
@@ -116,6 +129,7 @@ export class Boat {
 
   /**
    * Gets the list of passengers on the boat
+   *
    * @returns Array of passengers
    */
   public getPassengersList(): Passenger[] {
@@ -124,6 +138,7 @@ export class Boat {
 
   /**
    * Checks if the boat has reached its destination
+   *
    * @returns True if the boat is at the destination
    */
   public isAtDestination(): boolean {
@@ -132,6 +147,7 @@ export class Boat {
 
   /**
    * Gets the current destination port
+   *
    * @returns The port the boat is heading to
    */
   public getCurrentDestinationPort(): Port {
@@ -140,9 +156,10 @@ export class Boat {
 
   /**
    * Sets the transit line this boat belongs to
+   *
    * @param line The transit line
    */
-  public setTransitLine(line: any): void {
+  public setTransitLine(line: unknown): void {
     this.transitLine = line;
   }
 
@@ -173,6 +190,7 @@ export class Boat {
 
   /**
    * Checks if the boat needs a path update
+   *
    * @returns True if a new path is needed
    */
   public needsPathUpdate(): boolean {
@@ -190,7 +208,7 @@ export class Boat {
    * Updates the boat's position and movement
    * Moves the boat along its path towards the destination
    */
-  update() {
+  public update() {
     // If we need a new path, try to get one
     if (this.needsNewPath) {
       this.updatePath();
@@ -222,18 +240,19 @@ export class Boat {
   /**
    * Draws the boat on the canvas
    * Renders the boat shape, passenger indicators, and wake effect
+   *
    * @param ctx The 2D rendering context to draw with
    */
-  draw(ctx: CanvasRenderingContext2D) {
+  public draw(ctx: CanvasRenderingContext2D) {
     ctx.save();
     ctx.translate(this.position.x, this.position.y);
     ctx.rotate(this.angle);
 
     // Draw boat body (triangle shape)
     ctx.beginPath();
-    ctx.moveTo(12, 0);  // Front point
+    ctx.moveTo(12, 0); // Front point
     ctx.lineTo(-7, -6); // Back left
-    ctx.lineTo(-7, 6);  // Back right
+    ctx.lineTo(-7, 6); // Back right
     ctx.closePath();
 
     // Boat fill with color

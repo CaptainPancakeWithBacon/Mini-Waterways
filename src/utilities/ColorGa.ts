@@ -21,6 +21,7 @@ export default class ColorGa extends Game {
   /**
    * Creates a new ColorGa game instance
    * Initializes canvas, input listeners, and scene management
+   *
    * @param canvas The HTML canvas element to render the game on
    */
   public constructor(canvas: HTMLCanvasElement) {
@@ -40,6 +41,7 @@ export default class ColorGa extends Game {
    * Handles window resize events
    * Automatically adjusts canvas size to match window dimensions
    */
+  // eslint-disable-next-line class-methods-use-this
   public onWindowResize() {
     ColorGa.canvas.width = window.innerWidth;
     ColorGa.canvas.height = window.innerHeight;
