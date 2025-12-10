@@ -2,7 +2,8 @@ import { defineConfig } from 'vite';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: '/Mini-Waterways/',
+  // Use '/' for Netlify, '/Mini-Waterways/' for GitHub Pages
+  base: process.env.NETLIFY ? '/' : '/Mini-Waterways/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
