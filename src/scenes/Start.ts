@@ -37,6 +37,14 @@ export default class Start extends Scene {
 
   private currentLine: TransitLine | null = null;
 
+  // Boat placement mode
+  private isPlacingBoats: boolean = false;
+
+  // Line editing mode
+  private isEditingLine: boolean = false;
+
+  private selectedLine: TransitLine | null = null;
+
   // Game state
   private score: number = 0;
 
@@ -50,10 +58,6 @@ export default class Start extends Scene {
   private maxTiles: number = 30;
 
   private maxBoatsPerLine: number = 2;
-
-  private boatSpawnTimer: number = 0;
-
-  private boatSpawnInterval: number = 5000;
 
   // Progression
   private dayDuration: number = 30000;
@@ -155,6 +159,64 @@ export default class Start extends Scene {
     return null;
   }
 
+  private getLineAtPosition(point: Point): TransitLine | null {
+    // Check each line to see if the point is near its path
+    const threshold = 20; // Distance threshold for clicking on a line
+
+    for (const line of this.transitLines) {
+      const ports = line.getPorts();
+      if (ports.length < 2) continue;
+
+      // Check each segment of the line
+      for (let i = 0; i < ports.length; i++) {
+        const port1 = ports[i];
+        const port2 = ports[(i + 1) % ports.length];
+        const pos1 = port1.getPosition();
+        const pos2 = port2.getPosition();
+
+        // Get the path between these two ports
+        const path = this.routeNetwork.findPath(pos1.x, pos1.y, pos2.x, pos2.y);
+        if (!path || path.length < 2) continue;
+
+        // Check if point is near any segment of this path
+        for (let j = 0; j < path.length - 1; j++) {
+          const segStart = path[j];
+          const segEnd = path[j + 1];
+
+          // Calculate distance from point to line segment
+          const dist = this.distanceToSegment(point, segStart, segEnd);
+          if (dist < threshold) {
+            return line;
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  private distanceToSegment(point: Point, segStart: Point, segEnd: Point): number {
+    const dx = segEnd.x - segStart.x;
+    const dy = segEnd.y - segStart.y;
+    const lengthSquared = dx * dx + dy * dy;
+
+    if (lengthSquared === 0) {
+      // Segment is a point
+      const px = point.x - segStart.x;
+      const py = point.y - segStart.y;
+      return Math.sqrt(px * px + py * py);
+    }
+
+    // Calculate projection of point onto line segment
+    const t = Math.max(0, Math.min(1, ((point.x - segStart.x) * dx + (point.y - segStart.y) * dy) / lengthSquared));
+    const projX = segStart.x + t * dx;
+    const projY = segStart.y + t * dy;
+
+    const distX = point.x - projX;
+    const distY = point.y - projY;
+    return Math.sqrt(distX * distX + distY * distY);
+  }
+
   private checkProgression(): void {
     const { currentDay } = this;
 
@@ -194,43 +256,27 @@ export default class Start extends Scene {
     const completeLineBtn = this.buttonBar.getButton('completeLine');
     const cancelLineBtn = this.buttonBar.getButton('cancelLine');
     const undoPortBtn = this.buttonBar.getButton('undoPort');
+    const addBoatBtn = this.buttonBar.getButton('addBoat');
+    const editLineBtn = this.buttonBar.getButton('editLine');
+    const deleteLineBtn = this.buttonBar.getButton('deleteLine');
 
     // Update button active states
     if (placeTilesBtn) placeTilesBtn.setActive(this.isPlacingTiles);
     if (removeTilesBtn) removeTilesBtn.setActive(this.isRemovingTiles);
     if (createLineBtn) createLineBtn.setActive(this.isCreatingLine);
+    if (addBoatBtn) addBoatBtn.setActive(this.isPlacingBoats);
+    if (editLineBtn) editLineBtn.setActive(this.isEditingLine);
 
-    // Handle button clicks
-    if (!this.isCreatingLine) {
-      // Normal mode buttons
-      if (placeTilesBtn?.isClicked()) {
-        this.isPlacingTiles = !this.isPlacingTiles;
-        this.isRemovingTiles = false;
-        this.lastPlacedTile = null;
-      }
-
-      if (removeTilesBtn?.isClicked()) {
-        this.isRemovingTiles = !this.isRemovingTiles;
-        this.isPlacingTiles = false;
-        this.lastPlacedTile = null;
-      }
-
-      if (createLineBtn?.isClicked()) {
-        this.isCreatingLine = true;
-        this.currentLine = new TransitLine(this.routeNetwork);
-        this.isPlacingTiles = false;
-        this.isRemovingTiles = false;
-        this.lastPlacedTile = null;
-      }
-    } else {
+    // Handle button clicks and keyboard shortcuts
+    if (this.isCreatingLine) {
       // Line creation mode buttons
-      if (createLineBtn?.isClicked()) {
+      if (createLineBtn?.isClicked() || KeyListener.keyPressed(KeyListener.KEY_L)) {
         // Toggle off line mode
         this.isCreatingLine = false;
         this.currentLine = null;
       }
 
-      if (completeLineBtn?.isClicked()) {
+      if (completeLineBtn?.isClicked() || KeyListener.keyPressed(KeyListener.KEY_ENTER)) {
         if (this.currentLine && this.currentLine.isValid()) {
           this.transitLines.push(this.currentLine);
           this.currentLine.setMaxBoats(this.maxBoatsPerLine);
@@ -239,15 +285,104 @@ export default class Start extends Scene {
         }
       }
 
-      if (cancelLineBtn?.isClicked()) {
+      if (cancelLineBtn?.isClicked() || KeyListener.keyPressed(KeyListener.KEY_ESC)) {
         this.currentLine = null;
         this.isCreatingLine = false;
       }
 
-      if (undoPortBtn?.isClicked()) {
+      if (undoPortBtn?.isClicked() || KeyListener.keyPressed('Backspace')) {
         if (this.currentLine) {
           this.currentLine.removeLastPort();
         }
+      }
+    } else if (this.isEditingLine) {
+      // Line editing mode buttons
+      if (editLineBtn?.isClicked() || KeyListener.keyPressed(KeyListener.KEY_E)) {
+        // Toggle off edit mode
+        this.isEditingLine = false;
+        this.selectedLine = null;
+      }
+
+      if (cancelLineBtn?.isClicked() || KeyListener.keyPressed(KeyListener.KEY_ESC)) {
+        this.isEditingLine = false;
+        this.selectedLine = null;
+      }
+
+      if (deleteLineBtn?.isClicked() || KeyListener.keyPressed(KeyListener.KEY_DEL)) {
+        if (this.selectedLine) {
+          const index = this.transitLines.indexOf(this.selectedLine);
+          if (index > -1) {
+            this.transitLines.splice(index, 1);
+          }
+          this.selectedLine = null;
+          this.isEditingLine = false;
+        }
+      }
+    } else {
+      // Normal mode buttons
+      if (placeTilesBtn?.isClicked() || KeyListener.keyPressed(KeyListener.KEY_P)) {
+        this.isPlacingTiles = !this.isPlacingTiles;
+        this.isRemovingTiles = false;
+        this.isPlacingBoats = false;
+        this.lastPlacedTile = null;
+      }
+
+      if (removeTilesBtn?.isClicked() || KeyListener.keyPressed(KeyListener.KEY_R)) {
+        this.isRemovingTiles = !this.isRemovingTiles;
+        this.isPlacingTiles = false;
+        this.isPlacingBoats = false;
+        this.lastPlacedTile = null;
+      }
+
+      if (createLineBtn?.isClicked() || KeyListener.keyPressed(KeyListener.KEY_L)) {
+        this.isCreatingLine = true;
+        this.currentLine = new TransitLine(this.routeNetwork);
+        this.isPlacingTiles = false;
+        this.isRemovingTiles = false;
+        this.isPlacingBoats = false;
+        this.lastPlacedTile = null;
+      }
+
+      if (addBoatBtn?.isClicked() || KeyListener.keyPressed(KeyListener.KEY_B)) {
+        this.isPlacingBoats = !this.isPlacingBoats;
+        this.isPlacingTiles = false;
+        this.isRemovingTiles = false;
+      }
+
+      if (editLineBtn?.isClicked() || KeyListener.keyPressed(KeyListener.KEY_E)) {
+        this.isEditingLine = true;
+        this.isPlacingTiles = false;
+        this.isRemovingTiles = false;
+        this.isPlacingBoats = false;
+      }
+    }
+
+    // Handle boat placement
+    if (this.isPlacingBoats && MouseListener.buttonPressed(MouseListener.BUTTON_LEFT)) {
+      const clickedLine = this.getLineAtPosition(mousePos);
+      if (clickedLine) {
+        // Add a boat to this line
+        const ports = clickedLine.getPorts();
+        if (ports.length >= 2 && clickedLine.getBoatCount() < clickedLine.getMaxBoats()) {
+          clickedLine.spawnBoat();
+          // Load passengers at first port if available (up to boat capacity)
+          const boats = clickedLine.getBoats();
+          const newBoat = boats[boats.length - 1];
+          const firstPort = ports[0];
+          if (firstPort && firstPort.getPassengers() > 0 && newBoat) {
+            const boatCapacity = 10; // Boat max capacity
+            const loadedPassengers = firstPort.removePassengers(boatCapacity);
+            newBoat.loadPassengers(loadedPassengers);
+          }
+        }
+      }
+    }
+
+    // Handle line selection for editing
+    if (this.isEditingLine && !this.selectedLine && MouseListener.buttonPressed(MouseListener.BUTTON_LEFT)) {
+      const clickedLine = this.getLineAtPosition(mousePos);
+      if (clickedLine) {
+        this.selectedLine = clickedLine;
       }
     }
 
@@ -361,10 +496,15 @@ export default class Start extends Scene {
             }
           }
 
-          // Load new passengers heading to other ports
+          // Load new passengers heading to other ports (up to remaining boat capacity)
           if (destinationPort.getPassengers() > 0) {
-            const loadedPassengers = destinationPort.removePassengers(999);
-            boat.loadPassengers(loadedPassengers);
+            const boatCapacity = 10; // Boat max capacity
+            const currentPassengers = boat.getPassengers();
+            const availableSpace = boatCapacity - currentPassengers;
+            if (availableSpace > 0) {
+              const loadedPassengers = destinationPort.removePassengers(availableSpace);
+              boat.loadPassengers(loadedPassengers);
+            }
           }
 
           // Move to next stop on the line
@@ -373,48 +513,7 @@ export default class Start extends Scene {
       }
     }
 
-    // Spawn boats on transit lines that need them
-    this.boatSpawnTimer += elapsed;
-    if (this.boatSpawnTimer >= this.boatSpawnInterval) {
-      this.trySpawnBoatsOnLines();
-      this.boatSpawnTimer = 0;
-    }
-
     return this;
-  }
-
-  private trySpawnBoatsOnLines(): void {
-    // Spawn boats on lines that:
-    // 1. Are valid (have connected route)
-    // 2. Have capacity for more boats
-    // 3. Have at least one port with waiting passengers
-    for (const line of this.transitLines) {
-      if (!line.isValid()) continue;
-      if (line.getBoatCount() >= line.getMaxBoats()) continue;
-
-      // Check if any port on the line has passengers
-      let hasPassengers = false;
-      for (const port of line.getPorts()) {
-        if (port.getPassengers() > 0) {
-          hasPassengers = true;
-          break;
-        }
-      }
-
-      if (hasPassengers) {
-        line.spawnBoat();
-        // Load passengers at first port if available
-        const boats = line.getBoats();
-        const newBoat = boats[boats.length - 1];
-        const firstPort = line.getPorts()[0];
-        if (firstPort && firstPort.getPassengers() > 0 && newBoat) {
-          const loadedPassengers = firstPort.removePassengers(999);
-          newBoat.loadPassengers(loadedPassengers);
-        }
-        // Only spawn one boat per interval
-        return;
-      }
-    }
   }
 
   public render(canvas: HTMLCanvasElement): void {
@@ -427,6 +526,40 @@ export default class Start extends Scene {
     // Draw all transit lines (routes)
     for (const line of this.transitLines) {
       line.draw(canvas);
+    }
+
+    // Draw selected line with highlight
+    if (this.selectedLine) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        const ports = this.selectedLine.getPorts();
+        if (ports.length >= 2) {
+          // Draw thick highlight around selected line
+          for (let i = 0; i < ports.length; i++) {
+            const port1 = ports[i];
+            const port2 = ports[(i + 1) % ports.length];
+            const pos1 = port1.getPosition();
+            const pos2 = port2.getPosition();
+
+            const path = this.routeNetwork.findPath(pos1.x, pos1.y, pos2.x, pos2.y);
+            if (path && path.length > 1) {
+              ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+              ctx.lineWidth = 8;
+              ctx.lineCap = 'round';
+              ctx.lineJoin = 'round';
+              ctx.setLineDash([10, 5]);
+
+              ctx.beginPath();
+              ctx.moveTo(path[0].x, path[0].y);
+              for (let j = 1; j < path.length; j++) {
+                ctx.lineTo(path[j].x, path[j].y);
+              }
+              ctx.stroke();
+              ctx.setLineDash([]);
+            }
+          }
+        }
+      }
     }
 
     // Draw line being created
@@ -489,7 +622,7 @@ export default class Start extends Scene {
     this.drawUI(canvas);
 
     // Draw button bar
-    this.buttonBar.draw(canvas, this.isCreatingLine);
+    this.buttonBar.draw(canvas, this.isCreatingLine, this.isEditingLine);
 
     // Draw game over screen
     if (this.isGameOver) {
@@ -502,13 +635,17 @@ export default class Start extends Scene {
     const lineHeight = 25;
     let yPos = padding;
 
+    // Draw stats panel at top right instead of top left
+    const panelWidth = 220;
+    const panelX = canvas.width - panelWidth - padding + 10;
+
     // Draw semi-transparent background
     CanvasUtil.fillRectangle(
       canvas,
+      panelX - 10,
       padding - 10,
-      padding - 10,
-      250,
-      lineHeight * 5 + 10,
+      panelWidth,
+      lineHeight * 6 + 10,
       'rgba(0, 0, 0, 0.5)',
       5,
     );
@@ -517,7 +654,7 @@ export default class Start extends Scene {
     CanvasUtil.writeText(
       canvas,
       `Score: ${this.score}`,
-      padding,
+      panelX,
       yPos + 20,
       'left',
       'sans-serif',
@@ -531,7 +668,7 @@ export default class Start extends Scene {
     CanvasUtil.writeText(
       canvas,
       `Day: ${this.currentDay}`,
-      padding,
+      panelX,
       yPos + 20,
       'left',
       'sans-serif',
@@ -545,8 +682,8 @@ export default class Start extends Scene {
     const tileColor = this.routeNetwork.getPlayerTileCount() >= this.maxTiles ? '#e74c3c' : '#ffffff';
     CanvasUtil.writeText(
       canvas,
-      `Route Tiles: ${this.routeNetwork.getPlayerTileCount()}/${this.maxTiles}`,
-      padding,
+      `Tiles: ${this.routeNetwork.getPlayerTileCount()}/${this.maxTiles}`,
+      panelX,
       yPos + 20,
       'left',
       'sans-serif',
@@ -560,7 +697,7 @@ export default class Start extends Scene {
     CanvasUtil.writeText(
       canvas,
       `Lines: ${this.transitLines.length}`,
-      padding,
+      panelX,
       yPos + 20,
       'left',
       'sans-serif',
@@ -578,7 +715,7 @@ export default class Start extends Scene {
     CanvasUtil.writeText(
       canvas,
       `Boats: ${totalBoats}`,
-      padding,
+      panelX,
       yPos + 20,
       'left',
       'sans-serif',
@@ -592,7 +729,7 @@ export default class Start extends Scene {
     CanvasUtil.writeText(
       canvas,
       `Ports: ${this.ports.length}`,
-      padding,
+      panelX,
       yPos + 20,
       'left',
       'sans-serif',
@@ -601,36 +738,36 @@ export default class Start extends Scene {
       400,
     );
 
-    // Draw info panel at bottom left (above button bar)
-    const legendY = canvas.height - this.buttonBar.getBarHeight() - 140;
-    CanvasUtil.fillRectangle(
-      canvas,
-      padding - 10,
-      legendY - 10,
-      280,
-      130,
-      'rgba(0, 0, 0, 0.5)',
-      5,
-    );
-
-    CanvasUtil.writeText(
-      canvas,
-      this.isCreatingLine ? '🚌 LINE CREATION MODE' : '💡 Game Info:',
-      padding,
-      legendY + 15,
-      'left',
-      'sans-serif',
-      14,
-      this.isCreatingLine ? '#f39c12' : '#ffffff',
-      700,
-    );
-
+    // Draw compact info panel at bottom left (above button bar)
     if (this.isCreatingLine) {
+      const legendY = canvas.height - this.buttonBar.getBarHeight() - 85;
+      CanvasUtil.fillRectangle(
+        canvas,
+        padding - 10,
+        legendY - 10,
+        280,
+        75,
+        'rgba(0, 0, 0, 0.7)',
+        5,
+      );
+
+      CanvasUtil.writeText(
+        canvas,
+        '🚌 LINE CREATION MODE',
+        padding,
+        legendY + 15,
+        'left',
+        'sans-serif',
+        14,
+        '#f39c12',
+        700,
+      );
+
       CanvasUtil.writeText(
         canvas,
         'Click ports to add to line',
         padding,
-        legendY + 40,
+        legendY + 38,
         'left',
         'sans-serif',
         12,
@@ -646,70 +783,106 @@ export default class Start extends Scene {
         'left',
         'sans-serif',
         12,
-        'rgba(255, 255, 255, 0.9)',
-        400,
+        '#2ecc71',
+        600,
+      );
+    } else if (this.isPlacingBoats) {
+      const legendY = canvas.height - this.buttonBar.getBarHeight() - 65;
+      CanvasUtil.fillRectangle(
+        canvas,
+        padding - 10,
+        legendY - 10,
+        280,
+        55,
+        'rgba(0, 0, 0, 0.7)',
+        5,
       );
 
       CanvasUtil.writeText(
         canvas,
-        'Use buttons below to complete',
+        '🚤 BOAT PLACEMENT MODE',
         padding,
-        legendY + 76,
+        legendY + 15,
         'left',
         'sans-serif',
-        11,
-        '#2ecc71',
-        400,
+        14,
+        '#1abc9c',
+        700,
       );
-    } else {
+
       CanvasUtil.writeText(
         canvas,
-        'Use buttons below to play',
+        'Click on a line to add a boat',
         padding,
-        legendY + 40,
+        legendY + 38,
         'left',
         'sans-serif',
         12,
         'rgba(255, 255, 255, 0.9)',
         400,
       );
+    } else if (this.isEditingLine) {
+      const legendY = canvas.height - this.buttonBar.getBarHeight() - 85;
+      CanvasUtil.fillRectangle(
+        canvas,
+        padding - 10,
+        legendY - 10,
+        280,
+        75,
+        'rgba(0, 0, 0, 0.7)',
+        5,
+      );
 
       CanvasUtil.writeText(
         canvas,
-        'Tiles auto-connect adjacently',
+        '✏️ LINE EDITING MODE',
         padding,
-        legendY + 58,
+        legendY + 15,
         'left',
         'sans-serif',
-        11,
-        'rgba(255, 255, 255, 0.7)',
-        400,
+        14,
+        '#9b59b6',
+        700,
       );
+
+      if (this.selectedLine) {
+        CanvasUtil.writeText(
+          canvas,
+          'Line selected',
+          padding,
+          legendY + 38,
+          'left',
+          'sans-serif',
+          12,
+          '#2ecc71',
+          600,
+        );
+
+        CanvasUtil.writeText(
+          canvas,
+          'Press Delete to remove line',
+          padding,
+          legendY + 58,
+          'left',
+          'sans-serif',
+          12,
+          'rgba(255, 255, 255, 0.9)',
+          400,
+        );
+      } else {
+        CanvasUtil.writeText(
+          canvas,
+          'Click on a line to select it',
+          padding,
+          legendY + 38,
+          'left',
+          'sans-serif',
+          12,
+          'rgba(255, 255, 255, 0.9)',
+          400,
+        );
+      }
     }
-
-    CanvasUtil.writeText(
-      canvas,
-      '🎁 Every 3 days: +10 tiles',
-      padding,
-      legendY + 85,
-      'left',
-      'sans-serif',
-      11,
-      '#2ecc71',
-      400,
-    );
-
-    CanvasUtil.writeText(
-      canvas,
-      '🎁 Every 6 days: +1 boat/line',
-      padding,
-      legendY + 103,
-      'left',
-      'sans-serif',
-      11,
-      '#2ecc71',
-      400,
-    );
   }
 
   private drawGameOver(canvas: HTMLCanvasElement): void {

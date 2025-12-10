@@ -45,7 +45,7 @@ export default class ButtonBar {
     const startY = canvasHeight - this.barHeight + this.padding + 5;
 
     // Calculate total width needed for all buttons
-    const buttonCount = 6;
+    const buttonCount = 8;
     const totalWidth = (buttonWidth * buttonCount) + (this.buttonSpacing * (buttonCount - 1));
     let startX = (canvasWidth - totalWidth) / 2;
 
@@ -57,7 +57,7 @@ export default class ButtonBar {
         startY,
         buttonWidth,
         buttonHeight,
-        '🔨 Place Tiles',
+        '🔨 Place (P)',
         'rgba(52, 73, 94, 0.9)',
         'rgba(52, 152, 219, 0.9)',
         'rgba(52, 152, 219, 0.9)',
@@ -73,7 +73,7 @@ export default class ButtonBar {
         startY,
         buttonWidth,
         buttonHeight,
-        '🗑️ Remove',
+        '🗑️ Remove (R)',
         'rgba(52, 73, 94, 0.9)',
         'rgba(231, 76, 60, 0.9)',
         'rgba(231, 76, 60, 0.9)',
@@ -89,7 +89,7 @@ export default class ButtonBar {
         startY,
         buttonWidth,
         buttonHeight,
-        '🚌 Line Mode',
+        '🚌 Line (L)',
         'rgba(52, 73, 94, 0.9)',
         'rgba(243, 156, 18, 0.9)',
         'rgba(243, 156, 18, 0.9)',
@@ -105,7 +105,7 @@ export default class ButtonBar {
         startY,
         buttonWidth,
         buttonHeight,
-        '✓ Complete',
+        '✓ Done (Enter)',
         'rgba(52, 73, 94, 0.9)',
         'rgba(46, 204, 113, 0.9)',
         'rgba(46, 204, 113, 0.9)',
@@ -121,7 +121,7 @@ export default class ButtonBar {
         startY,
         buttonWidth,
         buttonHeight,
-        '✗ Cancel',
+        '✗ Cancel (Esc)',
         'rgba(52, 73, 94, 0.9)',
         'rgba(231, 76, 60, 0.9)',
         'rgba(231, 76, 60, 0.9)',
@@ -137,10 +137,58 @@ export default class ButtonBar {
         startY,
         buttonWidth,
         buttonHeight,
-        '↶ Undo Port',
+        '↶ Undo (Back)',
         'rgba(52, 73, 94, 0.9)',
         'rgba(155, 89, 182, 0.9)',
         'rgba(155, 89, 182, 0.9)',
+      ),
+    );
+    startX += buttonWidth + this.buttonSpacing;
+
+    // Add Boat button (normal mode)
+    this.addButton(
+      'addBoat',
+      new UIButton(
+        startX,
+        startY,
+        buttonWidth,
+        buttonHeight,
+        '🚤 Add Boat (B)',
+        'rgba(52, 73, 94, 0.9)',
+        'rgba(26, 188, 156, 0.9)',
+        'rgba(26, 188, 156, 0.9)',
+      ),
+    );
+    startX += buttonWidth + this.buttonSpacing;
+
+    // Edit Line button (normal mode)
+    this.addButton(
+      'editLine',
+      new UIButton(
+        startX,
+        startY,
+        buttonWidth,
+        buttonHeight,
+        '✏️ Edit Line (E)',
+        'rgba(52, 73, 94, 0.9)',
+        'rgba(155, 89, 182, 0.9)',
+        'rgba(155, 89, 182, 0.9)',
+      ),
+    );
+    startX += buttonWidth + this.buttonSpacing;
+
+    // Delete Line button (edit mode only)
+    this.addButton(
+      'deleteLine',
+      new UIButton(
+        startX,
+        startY,
+        buttonWidth,
+        buttonHeight,
+        '🗑️ Delete (Del)',
+        'rgba(52, 73, 94, 0.9)',
+        'rgba(231, 76, 60, 0.9)',
+        'rgba(231, 76, 60, 0.9)',
       ),
     );
   }
@@ -160,8 +208,9 @@ export default class ButtonBar {
    *
    * @param canvas The canvas to draw on
    * @param isLineMode Whether line creation mode is active
+   * @param isEditMode Whether line editing mode is active
    */
-  public draw(canvas: HTMLCanvasElement, isLineMode: boolean): void {
+  public draw(canvas: HTMLCanvasElement, isLineMode: boolean, isEditMode: boolean): void {
     // Draw button bar background
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -176,18 +225,28 @@ export default class ButtonBar {
     const completeLine = this.buttons.get('completeLine');
     const cancelLine = this.buttons.get('cancelLine');
     const undoPort = this.buttons.get('undoPort');
+    const addBoat = this.buttons.get('addBoat');
+    const editLine = this.buttons.get('editLine');
+    const deleteLine = this.buttons.get('deleteLine');
 
     if (isLineMode) {
-      // In line mode, only show line-related buttons
+      // In line creation mode, only show line-related buttons
       createLine?.draw(canvas);
       completeLine?.draw(canvas);
       cancelLine?.draw(canvas);
       undoPort?.draw(canvas);
+    } else if (isEditMode) {
+      // In edit mode, show edit-related buttons
+      editLine?.draw(canvas);
+      deleteLine?.draw(canvas);
+      cancelLine?.draw(canvas);
     } else {
-      // In normal mode, show tile placement buttons and line button
+      // In normal mode, show all normal buttons
       placeTiles?.draw(canvas);
       removeTiles?.draw(canvas);
       createLine?.draw(canvas);
+      addBoat?.draw(canvas);
+      editLine?.draw(canvas);
     }
   }
 
