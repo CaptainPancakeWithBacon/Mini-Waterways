@@ -1,4 +1,4 @@
-# Isobar (werktitel)
+# Waterways (werktitel)
 
 Een minimalistisch kanaalspel waarin sluizen het knelpunt zijn. Werk in uitvoering.
 
