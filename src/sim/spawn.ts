@@ -20,7 +20,8 @@ export function addQuay(s: State, x: number, y: number, colour = 0) {
  * Zet het volgende gebouw neer. De kleur met de minste gebouwen is aan de beurt (zo krijgt een nieuwe kleur
  * meteen een paar), en die zet een wharf als er niet meer wharves dan quays van die kleur zijn, anders een quay.
  * Is er geen plek, dan stijgt de vraag bij een bestaand quay (zoals de community het van Motorways beschrijft).
- * `differentHeight`: het tegenstuk moet op een ander niveau liggen, zodat de eerste route een sluis nodig heeft.
+ * `differentHeight`: het tegenstuk ligt precies één niveau hoger of lager, zodat de eerste route één sluis nodig heeft
+ * en met de sluis waarmee je begint te halen is.
  */
 export function spawnOne(s: State, differentHeight = false) {
   let colour = 0;
@@ -40,7 +41,7 @@ export function spawnOne(s: State, differentHeight = false) {
     const y = nextInt(s.rng, s.height);
     if (!isFreeSpot(s, x, y)) continue;
     if (!opposite.every((b) => Math.abs(b.x - x) + Math.abs(b.y - y) >= config.minWharfQuayDistance)) continue;
-    if (differentHeight && !opposite.every((b) => heightAt(s, b.x, b.y) !== heightAt(s, x, y))) continue;
+    if (differentHeight && !opposite.every((b) => Math.abs(heightAt(s, b.x, b.y) - heightAt(s, x, y)) === 1)) continue;
     if (wantWharf) addWharf(s, x, y, colour);
     else addQuay(s, x, y, colour);
     return;

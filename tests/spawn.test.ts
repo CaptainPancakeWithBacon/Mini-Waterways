@@ -22,15 +22,15 @@ describe('spawn', () => {
     }
   });
 
-  it('starts with one wharf and one quay, far apart and on different levels', () => {
-    for (const seed of ['a', 'b', 'c', 'd', 'e']) {
+  it('starts with one wharf and one quay, far apart and exactly one level apart', () => {
+    for (const seed of ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j']) {
       const s = newGame(seed);
       const w = s.wharves[0]!;
       const q = s.quays[0]!;
       expect(s.wharves).toHaveLength(1);
       expect(s.quays).toHaveLength(1);
       expect(Math.abs(w.x - q.x) + Math.abs(w.y - q.y)).toBeGreaterThanOrEqual(config.minWharfQuayDistance);
-      expect(heightAt(s, w.x, w.y)).not.toBe(heightAt(s, q.x, q.y));
+      expect(Math.abs(heightAt(s, w.x, w.y) - heightAt(s, q.x, q.y))).toBe(1);
     }
   });
 

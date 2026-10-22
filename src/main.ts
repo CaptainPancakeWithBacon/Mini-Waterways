@@ -16,6 +16,9 @@ const ui: UiState = { tool: 'place', paused: false, speed: 1, muted: false };
 let state: State = newGame('title');
 let replay: Replay = { seed: state.seed, commands: [] };
 let pending: Command[] = [];
+// het titelspel achter het menu mag nooit een echte save overschrijven
+let started = false;
+const persist = () => started && save(state, replay);
 
 const hasSave = () => load() !== null;
 
@@ -24,8 +27,9 @@ function start(mode: Mode, water: boolean, seed = String(Date.now())) {
   replay = { seed, mode, water, commands: [] };
   pending = [];
   ui.paused = false;
+  started = true;
   panel.hideMenu();
-  save(state, replay);
+  persist();
 }
 
 function push(c: Command) {
@@ -63,6 +67,7 @@ const panel = createUi(
         state = saved.state;
         replay = saved.replay;
         pending = [];
+        started = true;
       }
       panel.hideMenu();
     },
@@ -105,9 +110,9 @@ window.addEventListener('keydown', (e) => {
 });
 
 // autosave: elke paar seconden en zodra het tabblad verdwijnt
-setInterval(() => !panel.menuOpen() && save(state, replay), 5000);
-document.addEventListener('visibilitychange', () => document.hidden && save(state, replay));
-window.addEventListener('pagehide', () => save(state, replay));
+setInterval(() => !panel.menuOpen() && persist(), 5000);
+document.addEventListener('visibilitychange', () => document.hidden && persist());
+window.addEventListener('pagehide', persist);
 
 // vaste tijdstap: sim loopt op tickRate (maal de gekozen snelheid), tekenen op elk frame
 const dtMs = 1000 / config.tickRate;

@@ -71,6 +71,6 @@ describe('golden replay', () => {
   // Breekt deze test na een bewuste regelwijziging, controleer dan eerst dat de wijziging
   // bedoeld is en zet daarna de nieuwe hash neer.
   it('ends in the recorded state', () => {
-    expect(hashState(runReplay(replay, TICKS))).toBe('9741cb14');
+    expect(hashState(runReplay(replay, TICKS))).toBe('3d0b75f5');
   });
 });
