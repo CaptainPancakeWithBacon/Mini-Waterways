@@ -120,6 +120,8 @@ let acc = 0;
 let prev = performance.now();
 
 function frame(now: number) {
+  // het canvas kan pas na de eerste layout een grootte hebben, of later van grootte veranderen zonder resize-event
+  if (canvas.width !== Math.round(canvas.clientWidth * (window.devicePixelRatio || 1))) resize();
   acc += Math.min(now - prev, 250);
   prev = now;
   if (ui.paused || panel.menuOpen()) acc = 0;

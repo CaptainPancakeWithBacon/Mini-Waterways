@@ -1,8 +1,9 @@
 import { config, ticks } from '../sim/config';
 import { edgeOk, heightAt, tileAt } from '../sim/grid';
 import { ticksPerTile } from '../sim/step';
-import { CANAL, LOCK, QUAY, WHARF, type State } from '../sim/types';
-import { palette } from './palette';
+import { CANAL, EMPTY, LOCK, QUAY, WHARF, type State } from '../sim/types';
+import { palette, shade } from './palette';
+import { terrainLayer } from './terrain';
 
 export interface Layout {
   cell: number;
@@ -72,6 +73,7 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
 }
 
 export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, s: State, now = performance.now()) {
+  if (canvas.width === 0 || canvas.height === 0) return; // nog geen layout
   if (s.seed !== lastSeed || s.tick < lastTick) {
     seen.clear();
     prevPending.clear();
@@ -86,37 +88,43 @@ export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, s
   const cy = (y: number) => oy + (y + 0.5) * cell;
   const line = Math.max(2, cell * 0.07);
   const walk = (t: number) => t === CANAL || t === LOCK;
+  const shadow = (blur: number, dy: number) => {
+    ctx.shadowColor = palette.shadow;
+    ctx.shadowBlur = cell * blur;
+    ctx.shadowOffsetY = cell * dy;
+  };
+  const noShadow = () => {
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetY = 0;
+  };
 
-  ctx.fillStyle = palette.paper;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // land: gelaagd papier, één keer getekend en gecachet
+  const terrain = terrainLayer(s, cell, ox, oy, canvas.width, canvas.height);
+  ctx.drawImage(terrain.canvas, 0, 0);
+  // buiten het speelveld een sluier, zodat duidelijk is waar je kunt bouwen
+  ctx.fillStyle = 'rgba(244, 239, 227, 0.72)';
+  ctx.fillRect(0, 0, canvas.width, oy);
+  ctx.fillRect(0, oy + s.height * cell, canvas.width, canvas.height);
+  ctx.fillRect(0, oy, ox, s.height * cell);
+  ctx.fillRect(ox + s.width * cell, oy, canvas.width, s.height * cell);
 
-  // land: een tint per niveau, met een zachte contourlijn waar het niveau verspringt
-  for (let y = 0; y < s.height; y++) {
-    for (let x = 0; x < s.width; x++) {
-      ctx.fillStyle = palette.levels[heightAt(s, x, y)] ?? palette.levels[0];
-      ctx.fillRect(ox + x * cell, oy + y * cell, cell + 0.5, cell + 0.5);
-    }
+  // bomen: weg zodra er op de tegel gebouwd is
+  for (const t of terrain.trees) {
+    if (tileAt(s, t.tx, t.ty) !== EMPTY) continue;
+    ctx.fillStyle = 'rgba(36, 59, 74, 0.14)';
+    ctx.beginPath();
+    ctx.ellipse(t.x + t.r * 0.35, t.y + t.r * 0.75, t.r * 1.05, t.r * 0.55, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = t.colour;
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = shade(t.colour, 0.3);
+    ctx.beginPath();
+    ctx.arc(t.x - t.r * 0.3, t.y - t.r * 0.3, t.r * 0.45, 0, Math.PI * 2);
+    ctx.fill();
   }
-  ctx.strokeStyle = palette.ink;
-  ctx.globalAlpha = 0.28;
-  ctx.lineWidth = Math.max(1.5, cell * 0.045);
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  for (let y = 0; y < s.height; y++) {
-    for (let x = 0; x < s.width; x++) {
-      const h = heightAt(s, x, y);
-      if (x + 1 < s.width && heightAt(s, x + 1, y) !== h) {
-        ctx.moveTo(ox + (x + 1) * cell, oy + y * cell);
-        ctx.lineTo(ox + (x + 1) * cell, oy + (y + 1) * cell);
-      }
-      if (y + 1 < s.height && heightAt(s, x, y + 1) !== h) {
-        ctx.moveTo(ox + x * cell, oy + (y + 1) * cell);
-        ctx.lineTo(ox + (x + 1) * cell, oy + (y + 1) * cell);
-      }
-    }
-  }
-  ctx.stroke();
-  ctx.globalAlpha = 1;
 
   // kanaal als doorlopende lijn. Een stap in hoogte zonder sluis verbindt niet: dat is het signaal dat er een sluis moet komen.
   const links: [number, number, number, number][] = [];
@@ -135,7 +143,14 @@ export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, s
       }
     }
   }
-  const stroke = (width: number, colour: string) => {
+  // tegels met een verbinding krijgen hun ronde einden van de lijn zelf; losse tegels een stip
+  const linked = new Set<number>();
+  for (const [x, y, nx, ny] of links) {
+    linked.add(y * s.width + x);
+    linked.add(ny * s.width + nx);
+  }
+  const stroke = (width: number, colour: string, withShadow = false) => {
+    if (withShadow) shadow(0.3, 0.07);
     ctx.strokeStyle = colour;
     ctx.fillStyle = colour;
     ctx.lineWidth = width;
@@ -148,79 +163,109 @@ export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, s
     }
     ctx.stroke();
     for (let i = 0; i < s.tiles.length; i++) {
-      if (!walk(s.tiles[i]!)) continue;
+      if (!walk(s.tiles[i]!) || linked.has(i)) continue;
       ctx.beginPath();
       ctx.arc(cx(i % s.width), cy(Math.floor(i / s.width)), width / 2, 0, Math.PI * 2);
       ctx.fill();
     }
+    noShadow();
   };
+  stroke(cell * 0.66, palette.bank, true); // oever
   stroke(cell * 0.46, palette.water);
-  stroke(cell * 0.16, palette.waterLight);
+  stroke(cell * 0.15, palette.waterLight);
 
-  // sluizen: kamer die vol loopt tijdens een cyclus, poort aan de hoge kant
+  // sluizen: stenen kamer met een poort aan beide uiteinden, dikker aan de kant waar het land hoger ligt
   for (const l of s.locks) {
     const x = ox + l.x * cell;
     const y = oy + l.y * cell;
-    const pad = cell * 0.1;
-    const size = cell - 2 * pad;
+    const size = cell * 0.9;
+    const x0 = x + (cell - size) / 2;
+    const y0 = y + (cell - size) / 2;
     const total = ticks(config.lockCycleSeconds * (l.pond ? config.pondFactor : 1));
-    const up = l.state === 'high' ? 1 : 0;
-    const level = l.cycleLeft > 0 ? (l.state === 'low' ? 1 - l.cycleLeft / total : l.cycleLeft / total) : up;
-    roundRect(ctx, x + pad, y + pad, size, size, cell * 0.14);
-    ctx.fillStyle = palette.paper;
+    const level = l.cycleLeft > 0 ? (l.state === 'low' ? 1 - l.cycleLeft / total : l.cycleLeft / total) : l.state === 'high' ? 1 : 0;
+
+    shadow(0.35, 0.08);
+    roundRect(ctx, x0, y0, size, size, cell * 0.16);
+    ctx.fillStyle = palette.bank;
     ctx.fill();
+    noShadow();
     ctx.save();
+    roundRect(ctx, x0 + cell * 0.06, y0 + cell * 0.06, size - cell * 0.12, size - cell * 0.12, cell * 0.12);
     ctx.clip();
+    ctx.fillStyle = shade(palette.waterLight, 0.35);
+    ctx.fillRect(x0, y0, size, size);
+    const wh = size * (0.18 + 0.82 * level);
     ctx.fillStyle = palette.water;
-    const h = size * (0.2 + 0.8 * level);
-    ctx.fillRect(x + pad, y + pad + size - h, size, h);
+    ctx.fillRect(x0, y0 + size - wh, size, wh + 1);
     ctx.fillStyle = palette.waterLight;
-    ctx.fillRect(x + pad, y + pad + size - h, size, Math.max(2, cell * 0.06));
+    ctx.fillRect(x0, y0 + size - wh, size, Math.max(2, cell * 0.05));
     ctx.restore();
-    ctx.strokeStyle = palette.ink;
-    ctx.lineWidth = line;
-    roundRect(ctx, x + pad, y + pad, size, size, cell * 0.14);
-    ctx.stroke();
-    // dikke poortbalk aan de kant waar het terrein hoger ligt
-    ctx.lineCap = 'butt';
-    ctx.lineWidth = line * 1.8;
+
+    // richting van de doorvaart: naar de hoge buur toe
+    let ax = 1;
+    let ay = 0;
     for (const [dx, dy] of [[1, 0], [0, 1], [-1, 0], [0, -1]] as const) {
       const nx = l.x + dx;
       const ny = l.y + dy;
-      if (nx < 0 || ny < 0 || nx >= s.width || ny >= s.height || heightAt(s, nx, ny) !== heightAt(s, l.x, l.y) + 1) continue;
+      if (nx >= 0 && ny >= 0 && nx < s.width && ny < s.height && heightAt(s, nx, ny) === heightAt(s, l.x, l.y) + 1) {
+        ax = dx;
+        ay = dy;
+        break;
+      }
+    }
+    ctx.strokeStyle = palette.ink;
+    ctx.lineCap = 'round';
+    for (const [dir, w] of [[1, 2.4], [-1, 1.3]] as const) {
+      ctx.lineWidth = line * w;
       ctx.beginPath();
-      ctx.moveTo(cx(l.x) + dx * size * 0.5 + dy * size * 0.36, cy(l.y) + dy * size * 0.5 + dx * size * 0.36);
-      ctx.lineTo(cx(l.x) + dx * size * 0.5 - dy * size * 0.36, cy(l.y) + dy * size * 0.5 - dx * size * 0.36);
+      ctx.moveTo(cx(l.x) + ax * dir * size * 0.46 + ay * size * 0.34, cy(l.y) + ay * dir * size * 0.46 + ax * size * 0.34);
+      ctx.lineTo(cx(l.x) + ax * dir * size * 0.46 - ay * size * 0.34, cy(l.y) + ay * dir * size * 0.46 - ax * size * 0.34);
       ctx.stroke();
     }
     if (l.pond) {
       ctx.fillStyle = palette.ink;
       ctx.beginPath();
-      ctx.arc(x + cell * 0.8, y + cell * 0.2, cell * 0.07, 0, Math.PI * 2);
+      ctx.arc(x + cell * 0.82, y + cell * 0.18, cell * 0.07, 0, Math.PI * 2);
       ctx.fill();
     }
   }
 
-  // wharves (afgeronde vierkanten)
+  // wharves: pakhuis met een kleurig dak en een zijkant, zodat ze boven het land uitsteken
   for (const w of s.wharves) {
     const k = appear(`w${w.id}`, now);
-    const r = cell * 0.37 * k;
-    ctx.fillStyle = palette.colours[w.colour] ?? palette.ink;
-    roundRect(ctx, cx(w.x) - r, cy(w.y) - r, 2 * r, 2 * r, r * 0.34);
+    const r = cell * 0.36 * k;
+    const depth = cell * 0.1 * k;
+    const colour = palette.colours[w.colour] ?? palette.ink;
+    shadow(0.3, 0.1);
+    roundRect(ctx, cx(w.x) - r, cy(w.y) - r + depth, 2 * r, 2 * r, r * 0.3);
+    ctx.fillStyle = shade(colour, -0.3);
+    ctx.fill();
+    noShadow();
+    roundRect(ctx, cx(w.x) - r, cy(w.y) - r, 2 * r, 2 * r, r * 0.3);
+    ctx.fillStyle = colour;
+    ctx.fill();
+    roundRect(ctx, cx(w.x) - r * 0.78, cy(w.y) - r * 0.78, r * 1.56, r * 1.56, r * 0.22);
+    ctx.fillStyle = shade(colour, 0.14);
     ctx.fill();
     glyph(ctx, w.colour, cx(w.x), cy(w.y), r);
   }
 
-  // quays (cirkels): ring is de aftelklok, de hele quay hapert zodra hij te vol staat
+  // quays: ronde kom met een kleurige rand. De ring is de aftelklok, de hele quay hapert zodra hij te vol staat
   const ringTicks = ticks(config.ringSeconds);
   for (const q of s.quays) {
     const colour = palette.colours[q.colour] ?? palette.ink;
     const over = q.pending > config.quayCapacity;
     const k = appear(`q${q.id}`, now) * (over ? 1 + 0.045 * Math.sin(now / 130) : 1);
-    const r = cell * 0.37 * k;
-    ctx.fillStyle = palette.paper;
+    const r = cell * 0.4 * k;
+    shadow(0.3, 0.1);
+    ctx.fillStyle = palette.bank;
+    ctx.beginPath();
+    ctx.arc(cx(q.x), cy(q.y), r * 1.1, 0, Math.PI * 2);
+    ctx.fill();
+    noShadow();
+    ctx.fillStyle = shade(palette.waterLight, 0.4);
     ctx.strokeStyle = colour;
-    ctx.lineWidth = cell * 0.13 * k;
+    ctx.lineWidth = cell * 0.12 * k;
     ctx.beginPath();
     ctx.arc(cx(q.x), cy(q.y), r - ctx.lineWidth / 2, 0, Math.PI * 2);
     ctx.fill();
@@ -237,7 +282,7 @@ export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, s
       ctx.lineWidth = cell * 0.1;
       ctx.lineCap = 'round';
       ctx.beginPath();
-      ctx.arc(cx(q.x), cy(q.y), cell * 0.56, -Math.PI / 2, -Math.PI / 2 + (q.ring / ringTicks) * Math.PI * 2);
+      ctx.arc(cx(q.x), cy(q.y), cell * 0.6, -Math.PI / 2, -Math.PI / 2 + (q.ring / ringTicks) * Math.PI * 2);
       ctx.stroke();
     }
     // rimpel bij een aflevering
@@ -256,7 +301,7 @@ export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, s
   }
   ctx.globalAlpha = 1;
 
-  // boten: afgeronde scheepjes die langs hun richting liggen
+  // boten: spitse scheepjes met een dek en een kielzog
   const perTile = ticksPerTile(s);
   for (const b of s.barges) {
     const a = b.path[b.i]!;
@@ -264,18 +309,38 @@ export function draw(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, s
     const t = b.sub / perTile;
     const px = cx(a[0] + (n[0] - a[0]) * t);
     const py = cy(a[1] + (n[1] - a[1]) * t);
-    if (n[0] !== a[0] || n[1] !== a[1]) angles.set(b.id, Math.atan2(n[1] - a[1], n[0] - a[0]));
+    const moving = n[0] !== a[0] || n[1] !== a[1];
+    if (moving) angles.set(b.id, Math.atan2(n[1] - a[1], n[0] - a[0]));
+    const colour = palette.colours[b.colour] ?? palette.ink;
+    const L = cell * 0.64;
+    const W = cell * 0.34;
     ctx.save();
     ctx.translate(px, py);
     ctx.rotate(angles.get(b.id) ?? 0);
-    const len = cell * 0.46;
-    const wid = cell * 0.28;
-    roundRect(ctx, -len / 2, -wid / 2, len, wid, wid * 0.5);
-    ctx.fillStyle = palette.colours[b.colour] ?? palette.ink;
-    ctx.fill();
-    ctx.strokeStyle = palette.paper;
-    ctx.lineWidth = Math.max(1.5, cell * 0.05);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+    ctx.lineWidth = Math.max(1.5, cell * 0.04);
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-L * 0.45, -W * 0.35);
+    ctx.lineTo(-L * 1.25, -W * 0.95);
+    ctx.moveTo(-L * 0.45, W * 0.35);
+    ctx.lineTo(-L * 1.25, W * 0.95);
     ctx.stroke();
+    shadow(0.18, 0.05);
+    ctx.beginPath();
+    ctx.moveTo(L / 2, 0);
+    ctx.quadraticCurveTo(L * 0.22, -W / 2, -L / 2 + W * 0.2, -W / 2);
+    ctx.lineTo(-L / 2, -W * 0.3);
+    ctx.lineTo(-L / 2, W * 0.3);
+    ctx.lineTo(-L / 2 + W * 0.2, W / 2);
+    ctx.quadraticCurveTo(L * 0.22, W / 2, L / 2, 0);
+    ctx.closePath();
+    ctx.fillStyle = colour;
+    ctx.fill();
+    noShadow();
+    roundRect(ctx, -L * 0.28, -W * 0.2, L * 0.5, W * 0.4, W * 0.15);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.fill();
     ctx.restore();
   }
 
