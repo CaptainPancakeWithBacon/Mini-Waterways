@@ -1,20 +1,13 @@
-window.onload = () => {
-  requestAnimationFrame(() => {
-    const boatPath = document.getElementById('boat');
+const canvas = document.querySelector<HTMLCanvasElement>('#game')!;
+const ctx = canvas.getContext('2d')!;
 
-    if (boatPath instanceof SVGTextPathElement) {
-      let offset = 0;
+function draw() {
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = Math.round(canvas.clientWidth * dpr);
+  canvas.height = Math.round(canvas.clientHeight * dpr);
+  ctx.fillStyle = '#f1ead9';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+}
 
-      const moveBoat = () => {
-        offset += 0.5;
-        if (offset > 100) offset = 0;
-        boatPath.setAttribute('startOffset', `${offset}%`);
-        requestAnimationFrame(moveBoat);
-      };
-
-      moveBoat();
-    } else {
-      console.error("🚤 #boat not found or not SVGTextPathElement");
-    }
-  });
-};
+window.addEventListener('resize', draw);
+draw();
