@@ -5,12 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Waterways</title>
     <style>
-      html, body { margin: 0; height: 100%; background: #f1ead9; overflow: hidden; }
-      canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+      :root { --paper: #f1ead9; --ink: #243b4a; --canal: #7fa3b8; --line: #cfc5a8; }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); overflow: hidden;
+        font: 15px/1.35 system-ui, sans-serif; }
+      body { display: flex; flex-direction: column; }
+      #hud { flex: none; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 8px 12px;
+        border-bottom: 1px solid var(--line); }
+      #hud .group { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+      #hud .stat { white-space: nowrap; }
+      #hud .stat b { font-variant-numeric: tabular-nums; }
+      #hud .gauge { width: 70px; height: 10px; border: 1.5px solid var(--ink); border-radius: 6px; overflow: hidden; }
+      #hud .gauge i { display: block; height: 100%; background: var(--canal); }
+      button { font: inherit; color: var(--ink); background: var(--paper); border: 1.5px solid var(--ink);
+        border-radius: 8px; padding: 6px 10px; min-height: 36px; cursor: pointer; touch-action: manipulation; }
+      button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+      button:disabled { opacity: .4; cursor: default; }
+      button:focus-visible, input:focus-visible { outline: 3px solid #0072b2; outline-offset: 2px; }
+      canvas { display: block; flex: 1; min-height: 0; width: 100%; touch-action: none; }
+      .overlay { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+        background: rgba(241, 234, 217, .92); padding: 16px; overflow: auto; }
+      .overlay[hidden] { display: none; }
+      .panel { max-width: 560px; width: 100%; display: grid; gap: 12px; }
+      .panel h1 { margin: 0; font-size: 28px; letter-spacing: .02em; }
+      .panel p { margin: 0; }
+      .row { display: flex; gap: 10px; flex-wrap: wrap; }
+      .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+      .card { text-align: left; padding: 14px; display: grid; gap: 4px; border-width: 2px; }
+      .card strong { font-size: 18px; }
+      .menu-btn { text-align: left; padding: 10px 14px; }
+      .menu-btn small { display: block; opacity: .75; }
+      label { display: flex; gap: 8px; align-items: center; }
     </style>
   </head>
   <body>
+    <header id="hud"></header>
     <canvas id="game"></canvas>
+    <div id="cards" class="overlay" hidden></div>
+    <div id="menu" class="overlay"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

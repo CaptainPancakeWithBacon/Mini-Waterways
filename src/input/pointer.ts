@@ -2,17 +2,20 @@ import type { Layout } from '../render/draw';
 import { toTile } from '../render/draw';
 import type { Command } from '../sim/types';
 
+type Tool = 'place' | 'remove' | 'lock' | 'pond';
+
 /**
- * Slepen met links plaatst kanaal, slepen met rechts of Shift haalt het weg.
+ * Kanaal en wissen werken met slepen, sluis en vijver met een tik. Rechtermuisknop of Shift wist altijd.
  * Commando's worden verzameld en door de loop per tick leeggehaald.
  */
 export function attachPointer(
   canvas: HTMLCanvasElement,
   getLayout: () => Layout,
+  getTool: () => Tool,
   push: (c: Command) => void,
   onTapWhenOver: () => boolean,
 ) {
-  let mode: Command['type'] | null = null;
+  let mode: Tool | null = null;
   let last: [number, number] | null = null;
 
   const act = (e: PointerEvent) => {
@@ -38,9 +41,10 @@ export function attachPointer(
   canvas.addEventListener('pointerdown', (e) => {
     if (onTapWhenOver()) return;
     canvas.setPointerCapture(e.pointerId);
-    mode = e.button === 2 || e.shiftKey ? 'remove' : 'place';
+    mode = e.button === 2 || e.shiftKey ? 'remove' : getTool();
     last = null;
     act(e);
+    if (mode === 'lock' || mode === 'pond') mode = null; // één commando per tik
   });
   canvas.addEventListener('pointermove', act);
   const stop = () => (mode = null);
