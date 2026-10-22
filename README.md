@@ -1,6 +1,11 @@
-# Waterways (werktitel)
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/readme-header-dark.svg">
+    <img src="brand/readme-header.svg" alt="Waterways" width="640">
+  </picture>
+</p>
 
-Een minimalistisch kanaalspel waarin sluizen het knelpunt zijn. Werk in uitvoering.
+Werk in uitvoering. Werktitel.
 
 ```bash
 npm install
