@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { config } from '../src/sim/config';
-import { tileAt } from '../src/sim/grid';
+import { heightAt, tileAt } from '../src/sim/grid';
 import { addQuay, addWharf, spawnOne } from '../src/sim/spawn';
 import { createState, newGame } from '../src/sim/state';
 import { CANAL, QUAY, WHARF } from '../src/sim/types';
@@ -22,12 +22,26 @@ describe('spawn', () => {
     }
   });
 
-  it('starts with one wharf and one quay, far apart', () => {
-    const s = newGame('start');
-    expect(s.wharves).toHaveLength(1);
-    expect(s.quays).toHaveLength(1);
-    const d = Math.abs(s.wharves[0]!.x - s.quays[0]!.x) + Math.abs(s.wharves[0]!.y - s.quays[0]!.y);
-    expect(d).toBeGreaterThanOrEqual(config.minWharfQuayDistance);
+  it('starts with one wharf and one quay, far apart and on different levels', () => {
+    for (const seed of ['a', 'b', 'c', 'd', 'e']) {
+      const s = newGame(seed);
+      const w = s.wharves[0]!;
+      const q = s.quays[0]!;
+      expect(s.wharves).toHaveLength(1);
+      expect(s.quays).toHaveLength(1);
+      expect(Math.abs(w.x - q.x) + Math.abs(w.y - q.y)).toBeGreaterThanOrEqual(config.minWharfQuayDistance);
+      expect(heightAt(s, w.x, w.y)).not.toBe(heightAt(s, q.x, q.y));
+    }
+  });
+
+  it('gives every unlocked colour its own wharf and quay', () => {
+    const s = newGame('colours');
+    s.colours = 3;
+    for (let i = 0; i < 4; i++) spawnOne(s);
+    for (const c of [0, 1, 2]) {
+      expect(s.wharves.filter((w) => w.colour === c).length).toBeGreaterThanOrEqual(1);
+    }
+    expect(s.quays.filter((q) => q.colour === 1).length).toBeGreaterThanOrEqual(1);
   });
 
   it('raises demand at a quay when the grid is full', () => {

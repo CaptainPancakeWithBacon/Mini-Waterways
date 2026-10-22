@@ -12,15 +12,21 @@ describe('findPath', () => {
   });
 
   it('walks around obstacles', () => {
-    const wall = (x: number, y: number) => !(x === 1 && y < 2);
+    const wall = (_ax: number, _ay: number, x: number, y: number) => !(x === 1 && y < 2);
     const p = findPath(3, 3, wall, [0, 0], [2, 0])!;
     expect(p.some(([x, y]) => x === 1 && y < 2)).toBe(false);
     expect(p.at(-1)).toEqual([2, 0]);
   });
 
   it('returns null without a connection', () => {
-    const wall = (x: number) => x !== 1;
+    const wall = (_ax: number, _ay: number, x: number) => x !== 1;
     expect(findPath(3, 3, wall, [0, 0], [2, 0])).toBeNull();
+  });
+
+  it('prefers a longer route over an expensive tile', () => {
+    const cost = (x: number, y: number) => (x === 1 && y === 0 ? 10 : 1);
+    const p = findPath(3, 2, open, [0, 0], [2, 0], cost)!;
+    expect(p.some(([x, y]) => x === 1 && y === 0)).toBe(false);
   });
 
   it('is deterministic', () => {

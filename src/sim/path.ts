@@ -3,15 +3,17 @@ import type { Pos } from './types';
 
 /**
  * A* op een 4-richtingen raster. Geeft de tegels van start tot en met goal, of null.
+ * `canMove` bepaalt of een stap van a naar b mag, `cost` wat het kost om b binnen te varen (minimaal 1).
  * ponytail: open lijst is een array die per stap gescand wordt, prima voor ~600 tegels;
  * een binaire heap als het raster groeit.
  */
 export function findPath(
   width: number,
   height: number,
-  passable: (x: number, y: number) => boolean,
+  canMove: (ax: number, ay: number, bx: number, by: number) => boolean,
   start: Pos,
   goal: Pos,
+  cost: (x: number, y: number) => number = () => 1,
 ): Pos[] | null {
   const key = (x: number, y: number) => y * width + x;
   const h = (x: number, y: number) => Math.abs(x - goal[0]) + Math.abs(y - goal[1]);
@@ -49,8 +51,8 @@ export function findPath(
       const ny = cy + dy;
       if (nx < 0 || ny < 0 || nx >= width || ny >= height) continue;
       const nk = key(nx, ny);
-      if (closed.has(nk) || !passable(nx, ny)) continue;
-      const ng = g.get(ck)! + 1;
+      if (closed.has(nk) || !canMove(cx, cy, nx, ny)) continue;
+      const ng = g.get(ck)! + cost(nx, ny);
       if (ng < (g.get(nk) ?? Infinity)) {
         g.set(nk, ng);
         from.set(nk, ck);
